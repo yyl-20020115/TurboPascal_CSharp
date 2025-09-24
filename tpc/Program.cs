@@ -1,7 +1,7 @@
 ﻿using static System.Runtime.InteropServices.JavaScript.JSType;
 using System;
 
-namespace tpc
+namespace TPC
 {
     internal class Program
     {
@@ -20,11 +20,11 @@ namespace tpc
             try
             {
                 // Create the symbol table of built-in constants, functions, and procedures.
-                var builtinSymbolTable = SymbolTable.makeBuiltinSymbolTable();
+                var builtinSymbolTable = SymbolTable.MakeBuiltinSymbolTable();
 
                 // Parse the program into a parse tree. Create the symbol table as we go.
                 var before = DateTime.Now.Ticks;
-                var root = parser.parse(builtinSymbolTable);
+                var root = parser.Parse(builtinSymbolTable);
                 /// console.log("Parsing: " + (new Date().getTime() - before) + "ms");
                 if (DUMP_TREE)
                 {

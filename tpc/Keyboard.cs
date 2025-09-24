@@ -1,15 +1,14 @@
-﻿namespace tpc
-{
-    public class Keyboard
-    {
-        internal bool keyPressed()
-        {
-            throw new NotImplementedException();
-        }
+﻿namespace TPC;
 
-        internal int readKey()
-        {
-            throw new NotImplementedException();
-        }
+public class Keyboard
+{
+    internal bool KeyPressed()
+    {
+        throw new NotImplementedException();
+    }
+
+    internal int ReadKey()
+    {
+        throw new NotImplementedException();
     }
 }

@@ -1,10 +1,6 @@
-﻿namespace tpc
+﻿namespace TPC;
+
+internal class crt
 {
-    internal class crt
-    {
-        internal static void importSymbols(SymbolTable symbolTable)
-        {
-            throw new NotImplementedException();
-        }
-    }
+    internal static void importSymbols(SymbolTable symbolTable) => throw new NotImplementedException();
 }

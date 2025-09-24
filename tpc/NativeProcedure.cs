@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace tpc
+namespace TPC
 {
     // The object that's stored in the Native store.
     internal class NativeProcedure

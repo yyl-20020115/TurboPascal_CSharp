@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace tpc
+namespace TPC
 {
     // Stores information about a single symbol.
 

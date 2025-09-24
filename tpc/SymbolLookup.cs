@@ -5,7 +5,7 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace tpc
+namespace TPC
 {
     // The result of a symbol lookup.
     internal class SymbolLookup
