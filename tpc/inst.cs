@@ -8,18 +8,16 @@
 //     http://cs2.uco.edu/~trt/cs4933/P-MachineSimulator.pdf
 internal class Inst
 {
-
-
     //  define(["PascalError"], function (PascalError) {
-    private static int OPCODE_BITS = 8;
-    private static int OPERAND1_BITS = 9;
-    private static int OPERAND2_BITS = 15;
-    private static int OPCODE_MASK = (1 << OPCODE_BITS) - 1;
-    private static int OPERAND1_MASK = (1 << OPERAND1_BITS) - 1;
-    private static int OPERAND2_MASK = (1 << OPERAND2_BITS) - 1;
-    private static int OPCODE_SHIFT = 0;
-    private static int OPERAND1_SHIFT = OPCODE_SHIFT + OPCODE_BITS;
-    private static int OPERAND2_SHIFT = OPERAND1_SHIFT + OPERAND1_BITS;
+    private const int OPCODE_BITS = 8;
+    private const int OPERAND1_BITS = 9;
+    private const int OPERAND2_BITS = 15;
+    private const int OPCODE_MASK = (1 << OPCODE_BITS) - 1;
+    private const int OPERAND1_MASK = (1 << OPERAND1_BITS) - 1;
+    private const int OPERAND2_MASK = (1 << OPERAND2_BITS) - 1;
+    private const int OPCODE_SHIFT = 0;
+    private const int OPERAND1_SHIFT = OPCODE_SHIFT + OPCODE_BITS;
+    private const int OPERAND2_SHIFT = OPERAND1_SHIFT + OPERAND1_BITS;
 
     public static class defs
     {
@@ -128,7 +126,7 @@ internal class Inst
         public static Dictionary<int, string> opcodeToName = new Dictionary<int, string>();
 
         // Construct a machine language instruction.
-        public static int make(int opcode, int? operand1, int? operand2)
+        public static int Make(int opcode, int? operand1, int? operand2)
         {
               // Allow caller to leave out these operands.
             operand1 = operand1 ?? 0;
@@ -158,54 +156,44 @@ internal class Inst
         }
 
         // Return the opcode of the instruction.
-        public static int getOpcode(int i)
+        public static int GetOpcode(int i)
         {
             return (i >>> OPCODE_SHIFT) & OPCODE_MASK;
         }
 
         // Return operand 1 of the instruction.
-        public static int getOperand1(int i)
+        public static int GetOperand1(int i)
         {
             return (i >>> OPERAND1_SHIFT) & OPERAND1_MASK;
         }
 
         // Return operand 2 of the instruction.
-        public static int getOperand2(int i)
+        public static int GetOperand2(int i)
         {
             return (i >>> OPERAND2_SHIFT) & OPERAND2_MASK;
         }
 
         // Return a string version of the instruction.
-        public static string disassemble(int i)
+        public static string Disassemble(int i)
         {
-            var opcode = getOpcode(i);
-            var operand1 = getOperand1(i);
-            var operand2 = getOperand2(i);
+            var opcode = GetOpcode(i);
+            var operand1 = GetOperand1(i);
+            var operand2 = GetOperand2(i);
 
             return opcodeToName[opcode] + " " + operand1 + " " + operand2;
         }
 
         // Converts a type code like inst.I to "integer", or throw if not valid.
-        public static string typeCodeToName(int typeCode)
+        public static string TypeCodeToName(int typeCode) => typeCode switch
         {
-            switch (typeCode)
-            {
-                case A:
-                    return "pointer";
-                case B:
-                    return "boolean";
-                case C:
-                    return "char";
-                case I:
-                    return "integer";
-                case R:
-                    return "real";
-                case S:
-                    return "string";
-                default:
-                    throw new PascalError(null, "unknown type code " + typeCode);
-            }
-        }
+            A => "pointer",
+            B => "boolean",
+            C => "char",
+            I => "integer",
+            R => "real",
+            S => "string",
+            _ => throw new PascalError(null, "unknown type code " + typeCode),
+        };
     }
 
     // Make an inverse table of opcodes.
@@ -272,7 +260,4 @@ internal class Inst
         defs.opcodeToName[defs.STI] = "STI";
         defs.opcodeToName[defs.IXA] = "IXA";
     }
-    
-    
-
 }

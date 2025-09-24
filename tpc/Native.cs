@@ -3,7 +3,7 @@
 // Tracks a list of native functions that can be called from Pascal.
 internal class Native
 {
-    private List<NativeProcedure> nativeProcedures = [];
+    private readonly List<NativeProcedure> nativeProcedures = [];
 
     public Native()
     {
@@ -12,7 +12,7 @@ internal class Native
     }
 
     // Adds a native method, returning its index.
-    public int add(NativeProcedure nativeProcedure)
+    public int Add(NativeProcedure nativeProcedure)
     {
         var index = this.nativeProcedures.Count;
         this.nativeProcedures.Add(nativeProcedure);
@@ -20,8 +20,5 @@ internal class Native
     }
 
     // Get a native method by index.
-    public NativeProcedure get(int index)
-    {
-        return this.nativeProcedures[index];
-    }
+    public NativeProcedure Get(int index) => this.nativeProcedures[index];
 }

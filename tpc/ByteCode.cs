@@ -43,7 +43,7 @@ internal class ByteCode(Native native)
     // Add an opcode to the istore.
     public void Add(int opcode,int operand1,int operand2, string comment)
     {
-        var i = Inst.defs.make(opcode, operand1, operand2);
+        var i = Inst.defs.Make(opcode, operand1, operand2);
         var address = this.GetNextAddress();
         this.istore.Add(i);
         if (comment != null)
@@ -56,27 +56,18 @@ internal class ByteCode(Native native)
     public void SetOperand2(int address,int operand2)
     {
         var i = this.istore[address];
-        i = Inst.defs.make(Inst.defs.getOpcode((int)i), Inst.defs.getOperand1((int)i), operand2);
+        i = Inst.defs.Make(Inst.defs.GetOpcode((int)i), Inst.defs.GetOperand1((int)i), operand2);
         this.istore[address] = i;
     }
 
     // Return the next address to be added to the istore.
-    public int GetNextAddress()
-    {
-        return this.istore.Count;
-    }
+    public int GetNextAddress() => this.istore.Count;
 
     // Return a printable version of the bytecode object.
-    public string Print()
-    {
-        return this.PrintConstants() + "\n" + this.PrintIstore();
-    }
+    public string Print() => $"{this.PrintConstants()}\n{this.PrintIstore()}";
 
     // Set the starting address to the next instruction that will be added.
-    public void SetStartAddress()
-    {
-        this.startAddress = this.GetNextAddress();
-    }
+    public void SetStartAddress() => this.startAddress = this.GetNextAddress();
 
     // Add a comment to the address.
     public void AddComment(int address,string comment)
@@ -99,12 +90,12 @@ internal class ByteCode(Native native)
             var value = this.constants[i];
             if (value.GetType() == typeof(string))
             {
-                value = "'" + value + "'";
+                value = $"'{value}'";
             }
             lines.Add(Utils.RightAlign(i.ToString(), 4) + ": " + value);
         }
 
-        return "Constants:\n" + string.Join("\n", lines.ToArray()) + "\n";
+        return $"Constants:\n{string.Join("\n", lines.ToArray())}\n";
     }
 
     // Return a printable version of the istore array.
@@ -114,15 +105,15 @@ internal class ByteCode(Native native)
         for (int address = 0; address < this.istore.Count; address++)
         {
             var line = Utils.RightAlign(address.ToString(), 4) + ": " +
-                Utils.LeftAlign(Inst.defs.disassemble((int)this.istore[address]), 11);
+                Utils.LeftAlign(Inst.defs.Disassemble((int)this.istore[address]), 11);
             var comment = this.comments[address];
             if (comment != null)
             {
-                line += " ; " + comment;
+                line += $" ; {comment}";
             }
             lines.Add(line);
         }
 
-        return "Istore:\n" + string.Join("\n", lines.ToArray()) + "\n";
+        return $"Istore:\n{string.Join("\n", lines.ToArray())}\n";
     } 
 }

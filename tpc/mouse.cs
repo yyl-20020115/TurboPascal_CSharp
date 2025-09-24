@@ -1,8 +1,8 @@
 ﻿namespace TPC;
 
-internal class mouse
+internal class Mouse
 {
-    internal static void importSymbols(SymbolTable symbolTable)
+    internal static void ImportSymbols(SymbolTable symbolTable)
     {
         throw new NotImplementedException();
     }

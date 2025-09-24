@@ -5,7 +5,6 @@
 // lexical scope it's nested in.
 internal class SymbolTable
 {
-
     internal int totalVariableSize;
     internal int totalParameterSize;
     private int totalTypedConstantsSize;
@@ -58,7 +57,7 @@ internal class SymbolTable
                 // For this to work, all parameters must be added to the symbol table
                 // before any variable is added.
                 address = Inst.defs.MARK_SIZE + totalParameterSize + totalVariableSize;
-                totalVariableSize += (int)type.getTypeSize();
+                totalVariableSize += (int)type.GetTypeSize();
                 break;
             case Node.CONST:
                 break;
@@ -66,11 +65,11 @@ internal class SymbolTable
                 // They end up being copied to the stack at the start of
                 // a function call, like a regular variable.
                 address = Inst.defs.MARK_SIZE + totalParameterSize + totalVariableSize;
-                totalVariableSize += (int)type.getTypeSize();
+                totalVariableSize += (int)type.GetTypeSize();
                 break;
             case Node.PARAMETER:
                 address = Inst.defs.MARK_SIZE + totalParameterSize;
-                totalParameterSize += byReference == true ? 1 : (int)type.getTypeSize();
+                totalParameterSize += byReference == true ? 1 : (int)type.GetTypeSize();
                 break;
         }
 
@@ -146,11 +145,11 @@ internal class SymbolTable
     // Add a native constant to the symbol table.
     public void AddNativeConstant(string name, object value, Node type)
     {
-        Node valueNode = type.getSimpleTypeCode() switch
+        Node valueNode = type.GetSimpleTypeCode() switch
         {
-            Inst.defs.A => Node.makePointerNode(value),
-            Inst.defs.B => Node.makeBooleanNode(value.ToString()),
-            _ => Node.makeNumberNode(value.ToString()),
+            Inst.defs.A => Node.MakePointerNode(value),
+            Inst.defs.B => Node.MakeBooleanNode(value.ToString()),
+            _ => Node.MakeNumberNode(value.ToString()),
         };
         valueNode.expressionType = type;
 
@@ -163,13 +162,13 @@ internal class SymbolTable
     {
         // Add to table of builtins first (for CSP call).
         var nativeProcedure = new NativeProcedure(name, returnType, parameterTypes, fn);
-        var index = this.native.add(nativeProcedure);
+        var index = this.native.Add(nativeProcedure);
 
 
         //// Function that takes a type and an index and returns a PARAMETER for it.
         static Node MakeParameter(object type, int index)
         {
-            var name = Node.makeIdentifierNode(((char)(97 + index)).ToString()); // "a", "b", ...
+            var name = Node.MakeIdentifierNode(((char)(97 + index)).ToString()); // "a", "b", ...
             return new Node(Node.PARAMETER, null,
                     new Dictionary<string, object> { 
                         { "name", name },
@@ -183,7 +182,7 @@ internal class SymbolTable
 
         var type = new Node(Node.SUBPROGRAM_TYPE, null, new Dictionary<string, object> {
 
-            { "parameters", new Dictionary<object, object> { { parameterTypes, makeParameter } } },
+            { "parameters", new Dictionary<object, object> { { parameterTypes, MakeParameter } } },
             { "returnType", returnType}
                             });
 
@@ -212,7 +211,7 @@ internal class SymbolTable
     {
         var symbolTable = new SymbolTable(null);
 
-        modules.importModule("__builtin__", symbolTable);
+        Modules.ImportModule("__builtin__", symbolTable);
 
         return symbolTable;
     }

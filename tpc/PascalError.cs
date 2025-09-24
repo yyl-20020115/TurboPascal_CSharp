@@ -1,21 +1,12 @@
 ﻿namespace TPC;
 
 // Exception for parse, compile, and runtime errors.
-public class PascalError : Exception
+public class PascalError(Token token, string message) : Exception
 {
-    public Token token;
-    public string message;
+    public Token token = token;
+    public string message = message;
 
-    public PascalError(Token token, string message)
-    {
-        this.token = token;
-        this.message = message;
-
-        // Grab a stack trace.
-        //TODO: MVM this.stack = new Error().stack;
-    }
-
-    public string getMessage()
+    public string GetMessage()
     {
         var message = "Error: " + this.message;
 
@@ -27,6 +18,4 @@ public class PascalError : Exception
 
         return message;
     }
-
-
 }

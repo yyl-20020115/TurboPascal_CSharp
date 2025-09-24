@@ -34,7 +34,7 @@ internal class Node
     internal Node typeName;
     internal bool byReference;
     internal Node value;
-    internal static Dictionary<int, string> nodeLabel = new Dictionary<int, string>();
+    internal static Dictionary<int, string> nodeLabel = [];
     internal Node thenStatement;
     internal Node elseStatement;
     internal Node statement;
@@ -273,13 +273,13 @@ internal class Node
     }
 
     // Logs the node in JSON format to the console.
-    public void log()
+    public void Log()
     {
         Console.WriteLine("//TODO: MVM JSON.stringify(this, null, 4)");
     }
 
     // Returns whether the type is numeric (integer, character, or real).
-    public bool isNumericType()
+    public bool IsNumericType()
     {
         return this != null &&
             this.nodeType == Node.SIMPLE_TYPE &&
@@ -289,7 +289,7 @@ internal class Node
     }
 
     // Returns whether the type is boolean.
-    public bool isBooleanType()
+    public bool IsBooleanType()
     {
         return this != null &&
             this.nodeType == Node.SIMPLE_TYPE &&
@@ -297,7 +297,7 @@ internal class Node
     }
 
     // Returns whether the type is void (procedure return type).
-    public bool isVoidType()
+    public bool IsVoidType()
     {
         return this != null &&
             this.nodeType == Node.SIMPLE_TYPE &&
@@ -306,7 +306,7 @@ internal class Node
 
     // If both are identifiers, and are the same identifier (case-insensitive), returns true.
     // If identifiers and not equal, returns false. If either is not an identifier, throws.
-    public bool isSameIdentifier(Node other)
+    public bool IsSameIdentifier(Node other)
     {
         if (this.nodeType != Node.IDENTIFIER || other.nodeType != Node.IDENTIFIER)
         {
@@ -316,13 +316,13 @@ internal class Node
     }
 
     // Given a type, returns true if it's a simple type and of the specified type code.
-    public bool isSimpleType(int typeCode)
+    public bool IsSimpleType(int typeCode)
     {
         return this.nodeType == Node.SIMPLE_TYPE && this.typeCode == typeCode;
     }
 
     // Given a NUMBER node, returns the value as a float.
-    public decimal getNumber()
+    public decimal GetNumber()
     {
         if (this.nodeType == Node.NUMBER)
         {
@@ -343,37 +343,25 @@ internal class Node
     }
 
     // Given a BOOLEAN node, returns the value as a boolean.
-    public bool getBoolean()
+    public bool GetBoolean()
     {
-        if (this.nodeType == Node.BOOLEAN)
-        {
-            return this.token.value.ToLower() == "true";
-        }
-        else
-        {
-            throw new PascalError(this.token, "expected a boolean");
-        }
+        return this.nodeType == Node.BOOLEAN
+            ? this.token.value.ToLower() == "true"
+            : throw new PascalError(this.token, "expected a boolean");
     }
 
     // Given a SIMPLE_TYPE node, returns the type code.
-    public int getSimpleTypeCode()
+    public int GetSimpleTypeCode()
     {
-        if (this.nodeType == Node.SIMPLE_TYPE)
-        {
-            return this.typeCode;
-        }
-        else
-        {
-            throw new PascalError(this.token, "expected a simple type");
-        }
+        return nodeType == Node.SIMPLE_TYPE ? this.typeCode : throw new PascalError(this.token, "expected a simple type");
     }
 
     // Given a RANGE node, returns the lower bound as a number.
-    public decimal getRangeLowBound()
+    public decimal GetRangeLowBound()
     {
         if (this.nodeType == Node.RANGE)
         {
-            return this.low.getNumber();
+            return this.low.GetNumber();
         }
         else
         {
@@ -382,11 +370,11 @@ internal class Node
     }
 
     // Given a RANGE node, returns the high bound as a number.
-    public decimal getRangeHighBound()
+    public decimal GetRangeHighBound()
     {
         if (this.nodeType == Node.RANGE)
         {
-            return this.high.getNumber();
+            return this.high.GetNumber();
         }
         else
         {
@@ -395,11 +383,11 @@ internal class Node
     }
 
     // Given a RANGE node, returns the size (high minus low plus 1).
-    public decimal getRangeSize()
+    public decimal GetRangeSize()
     {
         if (this.nodeType == Node.RANGE)
         {
-            return this.high.getNumber() - this.low.getNumber() + 1;
+            return this.high.GetNumber() - this.low.GetNumber() + 1;
         }
         else
         {
@@ -408,7 +396,7 @@ internal class Node
     }
 
     // Given a RECORD_TYPE node, returns the FIELD node for the given token.
-    public Node getField(Token fieldToken)  //TODO: MVM  return type
+    public Node GetField(Token fieldToken)  //TODO: MVM  return type
     {
         if (this.nodeType != Node.RECORD_TYPE)
         {
@@ -425,7 +413,7 @@ internal class Node
         for (int i = 0; i < this.fields.Length; i++)
         {
             var field = this.fields[i];
-            if (field.name.token.isEqualTo(fieldToken))
+            if (field.name.token.IsEqualTo(fieldToken))
             {
                 return field;
             }
@@ -436,24 +424,20 @@ internal class Node
 
     // Given any expression type, returns the value of the expression. The
     // expression must evaluate to a scalar constant.
-    public object getConstantValue()
+    public object GetConstantValue()
     {
-        switch (this.nodeType)
+        return this.nodeType switch
         {
-            case Node.NUMBER:
-                return this.getNumber();
-            case Node.BOOLEAN:
-                return this.getBoolean();
-            case Node.STRING:
-                return this.token.value;
-            default:
-                throw new PascalError(this.token, "cannot get constant value of node type " +
-                                      this.nodeType);
-        }
+            Node.NUMBER => this.GetNumber(),
+            Node.BOOLEAN => this.GetBoolean(),
+            Node.STRING => this.token.value,
+            _ => throw new PascalError(this.token, "cannot get constant value of node type " +
+                                                  this.nodeType),
+        };
     }
 
     // Return the total parameter size of a function's parameters.
-    public int getTotalParameterSize()
+    public int GetTotalParameterSize()
     {
         if (this.nodeType != Node.SUBPROGRAM_TYPE)
         {
@@ -465,14 +449,14 @@ internal class Node
         for (var i = 0; i < this.parameters.Length; i++)
         {
             var parameter = this.parameters[i];
-            size += parameter.byReference ? 1 : (int)parameter.type.getTypeSize();
+            size += parameter.byReference ? 1 : (int)parameter.type.GetTypeSize();
         }
 
         return size;
     }
 
     // Given a type node (SIMPLE_TYPE, ARRAY_TYPE, etc.), returns the size of that type.
-    public decimal getTypeSize()
+    public decimal GetTypeSize()
     {
         decimal size;
 
@@ -487,62 +471,62 @@ internal class Node
                 size = 0;
                 for (var i = 0; i < this.fields.Length; i++)
                 {
-                    size += this.fields[i].type.getTypeSize();
+                    size += this.fields[i].type.GetTypeSize();
                 }
                 break;
             case Node.ARRAY_TYPE:
                 // Start with size of element type.
-                size = this.elementType.getTypeSize();
+                size = this.elementType.GetTypeSize();
 
                 // Multiply each range size.
                 for (var i = 0; i < this.ranges.Length; i++)
                 {
-                    size *= this.ranges[i].getRangeSize();
+                    size *= this.ranges[i].GetRangeSize();
                 }
                 break;
             /// case Node.SET_TYPE:
             default:
-                throw new PascalError(this.token, "can't get size of type " + this.print());
+                throw new PascalError(this.token, "can't get size of type " + this.Print());
         }
 
         return size;
     }
 
     // Useful types.
-    public static Node pointerType = new Node(SIMPLE_TYPE, null, new Dictionary<string, object> { { "typeCode", Inst.defs.A } });
-    public static Node booleanType = new Node(SIMPLE_TYPE, null, new Dictionary<string, object> { { "typeCode", Inst.defs.B } });
-    public static Node charType = new Node(SIMPLE_TYPE, null, new Dictionary<string, object> { { "typeCode", Inst.defs.C } });
-    public static Node integerType = new Node(SIMPLE_TYPE, null, new Dictionary<string, object> { { "typeCode", Inst.defs.I } });
-    public static Node voidType = new Node(SIMPLE_TYPE, null, new Dictionary<string, object> { { "typeCode", Inst.defs.P } });
-    public static Node realType = new Node(SIMPLE_TYPE, null, new Dictionary<string, object> { { "typeCode", Inst.defs.R } });
-    public static Node stringType = new Node(SIMPLE_TYPE, null, new Dictionary<string, object> { { "typeCode", Inst.defs.S } });
+    public static Node pointerType = new (SIMPLE_TYPE, null, new Dictionary<string, object> { { "typeCode", Inst.defs.A } });
+    public static Node booleanType = new (SIMPLE_TYPE, null, new Dictionary<string, object> { { "typeCode", Inst.defs.B } });
+    public static Node charType = new (SIMPLE_TYPE, null, new Dictionary<string, object> { { "typeCode", Inst.defs.C } });
+    public static Node integerType = new (SIMPLE_TYPE, null, new Dictionary<string, object> { { "typeCode", Inst.defs.I } });
+    public static Node voidType = new (SIMPLE_TYPE, null, new Dictionary<string, object> { { "typeCode", Inst.defs.P } });
+    public static Node realType = new (SIMPLE_TYPE, null, new Dictionary<string, object> { { "typeCode", Inst.defs.R } });
+    public static Node stringType = new (SIMPLE_TYPE, null, new Dictionary<string, object> { { "typeCode", Inst.defs.S } });
 
     // Fluid method to set the expression type.
-    public Node withExpressionType(Node expressionType)
+    public Node WithExpressionType(Node expressionType)
     {
         this.expressionType = expressionType;
         return this;
     }
-    public Node withExpressionTypeFrom(Node node)
+    public Node WithExpressionTypeFrom(Node node)
     {
         this.expressionType = node.expressionType;
         return this;
     }
 
     // Useful methods.
-    public static Node makeIdentifierNode(string name)
+    public static Node MakeIdentifierNode(string name)
     {
         return new Node(Node.IDENTIFIER, new Token(name, Token.IDENTIFIER));
     }
-    public static Node makeNumberNode(string value)
+    public static Node MakeNumberNode(string value)
     {
         return new Node(Node.NUMBER, new Token("" + value, Token.NUMBER));
     }
-    public static Node makeBooleanNode(string value)
+    public static Node MakeBooleanNode(string value)
     {
         return new Node(Node.BOOLEAN, new Token(value == null ? "True" : "False", Token.IDENTIFIER));  //TODO: MVM   value == null
     }
-    public static Node makePointerNode(object value)
+    public static Node MakePointerNode(object value)
     {
         // Nil is the only constant pointer.
         if (value != null)
@@ -556,7 +540,7 @@ internal class Node
     //   Node.nodeLabel = { } // Filled below.
 
     // Returns printed version of node.
-    public string print(string indent = null)
+    public string Print(string indent = null)
     {
         var s = "";
 
@@ -589,16 +573,16 @@ internal class Node
                 s += indent + nodeLabel[this.nodeType] + " " + this.name.token.value;
 
                 // Print parameters and return type.
-                s += this.expressionType.print() + ";\n\n";
+                s += this.expressionType.Print() + ";\n\n";
 
                 // Declarations.
                 for (var i = 0; i < this.declarations.Length; i++)
                 {
-                    s += this.declarations[i].print(indent) + ";\n";
+                    s += this.declarations[i].Print(indent) + ";\n";
                 }
 
                 // Main block.
-                s += "\n" + this.block.print(indent);
+                s += "\n" + this.block.Print(indent);
 
                 if (this.nodeType == Node.PROGRAM)
                 {
@@ -609,36 +593,36 @@ internal class Node
                 s += indent + "uses " + this.name.token.value;
                 break;
             case Node.VAR:
-                s += indent + "var " + this.name.print() + " : " + this.type.print();
+                s += indent + "var " + this.name.Print() + " : " + this.type.Print();
                 break;
             case Node.RANGE:
-                s += this.low.print() + ".." + this.high.print();
+                s += this.low.Print() + ".." + this.high.Print();
                 break;
             case Node.BLOCK:
                 s += indent + "begin\n";
                 for (var i = 0; i < this.statements.Length; i++)
                 {
-                    s += this.statements[i].print(indent + "    ") + ";\n";
+                    s += this.statements[i].Print(indent + "    ") + ";\n";
                 }
                 s += indent + "end";
                 break;
             case Node.PARAMETER:
-                s += (this.byReference ? "var " : "") + this.name.print() +
-                    " : " + this.type.print();
+                s += (this.byReference ? "var " : "") + this.name.Print() +
+                    " : " + this.type.Print();
                 break;
             case Node.CAST:
-                s += this.type.print() + "(" + this.expression.print() + ")";
+                s += this.type.Print() + "(" + this.expression.Print() + ")";
                 break;
             case Node.CONST:
-                s += indent + "const " + this.name.print();
+                s += indent + "const " + this.name.Print();
                 if (this.type != null)
                 {
-                    s += " { : " + this.type.print() + " }";
+                    s += " { : " + this.type.Print() + " }";
                 }
-                s += " = " + this.value.print();
+                s += " = " + this.value.Print();
                 break;
             case Node.ASSIGNMENT:
-                s += indent + this.lhs.print() + " := " + this.rhs.print();
+                s += indent + this.lhs.Print() + " := " + this.rhs.Print();
                 break;
             case Node.PROCEDURE_CALL:
             case Node.FUNCTION_CALL:
@@ -646,11 +630,11 @@ internal class Node
                 {
                     s += indent;
                 }
-                s += this.name.print();
+                s += this.name.Print();
                 List<string> argumentListLocal = new List<string>();
                 for (var i = 0; i < this.argumentList.Length; i++)
                 {
-                    argumentListLocal.Add(this.argumentList[i].print(indent));
+                    argumentListLocal.Add(this.argumentList[i].Print(indent));
                 }
                 if (argumentList.Length > 0)
                 {
@@ -659,114 +643,114 @@ internal class Node
                 break;
             case Node.REPEAT:
                 s += indent + "repeat\n";
-                s += this.block.print(indent + "    ");
-                s += "\n" + indent + "until " + this.expression.print();
+                s += this.block.Print(indent + "    ");
+                s += "\n" + indent + "until " + this.expression.Print();
                 break;
             case Node.FOR:
-                s += indent + "for " + this.variable.print() + " := " +
-                    this.fromExpr.print() + (this.downto ? " downto " : " to ") +
-                    this.toExpr.print() +
+                s += indent + "for " + this.variable.Print() + " := " +
+                    this.fromExpr.Print() + (this.downto ? " downto " : " to ") +
+                    this.toExpr.Print() +
                     " do\n";
-                s += this.body.print(indent + "    ");
+                s += this.body.Print(indent + "    ");
                 break;
             case Node.IF:
-                s += indent + "if " + this.expression.print() + " then\n";
-                s += this.thenStatement.print(indent + "    ");
+                s += indent + "if " + this.expression.Print() + " then\n";
+                s += this.thenStatement.Print(indent + "    ");
                 if (this.elseStatement != null)
                 {
                     s += "\n" + indent + "else\n";
-                    s += this.elseStatement.print(indent + "    ");
+                    s += this.elseStatement.Print(indent + "    ");
                 }
                 break;
             case Node.EXIT:
                 s += indent + "Exit";
                 break;
             case Node.FIELD:
-                s += indent + this.name.print() + " : " + this.type.print(indent);
+                s += indent + this.name.Print() + " : " + this.type.Print(indent);
                 break;
             case Node.WHILE:
-                s += indent + "while " + this.expression.print() + " do\n" +
-                    this.statement.print(indent + "    ");
+                s += indent + "while " + this.expression.Print() + " do\n" +
+                    this.statement.Print(indent + "    ");
                 break;
             case Node.TYPED_CONST:
-                s += indent + "const " + this.name.print();
-                s += " : " + this.type.print();
-                s += " = " + this.rawData.print();
+                s += indent + "const " + this.name.Print();
+                s += " : " + this.type.Print();
+                s += " = " + this.rawData.Print();
                 break;
             case Node.NOT:
-                s += "Not " + this.expression.print();
+                s += "Not " + this.expression.Print();
                 break;
             case Node.NEGATIVE:
-                s += "-" + this.expression.print();
+                s += "-" + this.expression.Print();
                 break;
             case Node.ADDITION:
-                s += this.lhs.print() + " + " + this.rhs.print();
+                s += this.lhs.Print() + " + " + this.rhs.Print();
                 break;
             case Node.SUBTRACTION:
-                s += this.lhs.print() + " - " + this.rhs.print();
+                s += this.lhs.Print() + " - " + this.rhs.Print();
                 break;
             case Node.MULTIPLICATION:
-                s += "(" + this.lhs.print() + "*" + this.rhs.print() + ")";
+                s += "(" + this.lhs.Print() + "*" + this.rhs.Print() + ")";
                 break;
             case Node.DIVISION:
-                s += this.lhs.print() + "/" + this.rhs.print();
+                s += this.lhs.Print() + "/" + this.rhs.Print();
                 break;
             case Node.EQUALITY:
-                s += this.lhs.print() + " = " + this.rhs.print();
+                s += this.lhs.Print() + " = " + this.rhs.Print();
                 break;
             case Node.INEQUALITY:
-                s += this.lhs.print() + " <> " + this.rhs.print();
+                s += this.lhs.Print() + " <> " + this.rhs.Print();
                 break;
             case Node.LESS_THAN:
-                s += this.lhs.print() + " < " + this.rhs.print();
+                s += this.lhs.Print() + " < " + this.rhs.Print();
                 break;
             case Node.GREATER_THAN:
-                s += this.lhs.print() + " > " + this.rhs.print();
+                s += this.lhs.Print() + " > " + this.rhs.Print();
                 break;
             case Node.LESS_THAN_OR_EQUAL_TO:
-                s += this.lhs.print() + " <= " + this.rhs.print();
+                s += this.lhs.Print() + " <= " + this.rhs.Print();
                 break;
             case Node.GREATER_THAN_OR_EQUAL_TO:
-                s += this.lhs.print() + " >= " + this.rhs.print();
+                s += this.lhs.Print() + " >= " + this.rhs.Print();
                 break;
             case Node.AND:
-                s += this.lhs.print() + " and " + this.rhs.print();
+                s += this.lhs.Print() + " and " + this.rhs.Print();
                 break;
             case Node.OR:
-                s += this.lhs.print() + " or " + this.rhs.print();
+                s += this.lhs.Print() + " or " + this.rhs.Print();
                 break;
             case Node.INTEGER_DIVISION:
-                s += this.lhs.print() + " div " + this.rhs.print();
+                s += this.lhs.Print() + " div " + this.rhs.Print();
                 break;
             case Node.MOD:
-                s += this.lhs.print() + " mod " + this.rhs.print();
+                s += this.lhs.Print() + " mod " + this.rhs.Print();
                 break;
             case Node.FIELD_DESIGNATOR:
-                s += this.variable.print() + "." + this.field.name.print();
+                s += this.variable.Print() + "." + this.field.name.print();
                 break;
             case Node.ARRAY:
-                List<string> indicesLocal = new List<string>();
+                List<string> indicesLocal = [];
                 for (var i = 0; i < this.indices.Length; i++)
                 {
-                    indicesLocal.Add(this.indices[i].print());
+                    indicesLocal.Add(this.indices[i].Print());
                 }
-                s += this.variable.print() + "[" + string.Join(",", indicesLocal.ToArray()) + "]";
+                s += this.variable.Print() + "[" + string.Join(",", indicesLocal.ToArray()) + "]";
                 break;
             case Node.TYPE:
-                s += indent + "type " + this.name.print() + " = " + this.type.print();
+                s += indent + "type " + this.name.Print() + " = " + this.type.Print();
                 break;
             case Node.ADDRESS_OF:
-                s += "@" + this.variable.print();
+                s += "@" + this.variable.Print();
                 break;
             case Node.DEREFERENCE:
-                s += this.variable.print() + "^";
+                s += this.variable.Print() + "^";
                 break;
             case Node.SIMPLE_TYPE:
                 if (this.typeCode == Inst.defs.A)
                 {
                     if (this.typeName != null)
                     {
-                        s += "^" + this.typeName.print();
+                        s += "^" + this.typeName.Print();
                     }
                     else
                     {
@@ -776,14 +760,14 @@ internal class Node
                 }
                 else
                 {
-                    s += Inst.defs.typeCodeToName(this.typeCode);
+                    s += Inst.defs.TypeCodeToName(this.typeCode);
                 }
                 break;
             case Node.RECORD_TYPE:
                 s += "record\n";
                 for (var i = 0; i < this.fields.Length; i++)
                 {
-                    s += this.fields[i].print(indent + "    ") + ";\n";
+                    s += this.fields[i].Print(indent + "    ") + ";\n";
                 }
                 s += indent + "end";
                 break;
@@ -791,16 +775,16 @@ internal class Node
                 List<string> rangesLocal = new List<string>();
                 for (var i = 0; i < this.ranges.Length; i++)
                 {
-                    rangesLocal.Add(this.ranges[i].print());
+                    rangesLocal.Add(this.ranges[i].Print());
                 }
-                s += "array[" + string.Join(",", rangesLocal.ToArray()) + "] of " + this.elementType.print();
+                s += "array[" + string.Join(",", rangesLocal.ToArray()) + "] of " + this.elementType.Print();
                 break;
             case Node.SUBPROGRAM_TYPE:
                 // Print parameters.
                 List<string> parametersLocal = new List<string>();
                 for (var i = 0; i < this.parameters.Length; i++)
                 {
-                    parametersLocal.Add(this.parameters[i].print());
+                    parametersLocal.Add(this.parameters[i].Print());
                 }
                 if (parametersLocal.Count > 0)
                 {
@@ -808,9 +792,9 @@ internal class Node
                 }
 
                 // Functions only: return type.
-                if (!this.returnType.isSimpleType(Inst.defs.P))
+                if (!this.returnType.IsSimpleType(Inst.defs.P))
                 {
-                    s += " : " + this.returnType.print();
+                    s += " : " + this.returnType.Print();
                 }
                 break;
             default:
@@ -823,12 +807,12 @@ internal class Node
 
     // Return a node that casts "this" to "type". Returns "this" if it's already
     // of type "type". Throws if "this" can't be cast to "type".
-    public Node castToType(Node type)
+    public Node CastToType(Node type)
     {
         // If the destination type is void and we're by reference, then do nothing
         // and allow anything. We're essentially passing into an untyped "var foo"
         // parameter.
-        if (type.isVoidType() && this.byReference)
+        if (type.IsVoidType() && this.byReference)
         {
             return this;
         }
@@ -872,8 +856,8 @@ internal class Node
 
                     // These can't be cast.
                     throw new PascalError(this.token, "can't cast from " +
-                                         Inst.defs.typeCodeToName(nodeTypeCode) +
-                                         " to " + Inst.defs.typeCodeToName(typeCode));
+                                         Inst.defs.TypeCodeToName(nodeTypeCode) +
+                                         " to " + Inst.defs.TypeCodeToName(typeCode));
                 }
 
                 // Cast Char to String, just return the same node.
@@ -898,8 +882,8 @@ internal class Node
 
                 // Can't cast.
                 throw new PascalError(this.token, "can't cast from " +
-                                     Inst.defs.typeCodeToName(nodeTypeCode) +
-                                     " to " + Inst.defs.typeCodeToName(typeCode));
+                                     Inst.defs.TypeCodeToName(nodeTypeCode) +
+                                     " to " + Inst.defs.TypeCodeToName(typeCode));
             }
             else
             {
@@ -915,7 +899,7 @@ internal class Node
                     {
                         // Assigning to generic pointer, always allowed.
                     }
-                    else if (type.typeName.isSameIdentifier(nodeType.typeName))
+                    else if (type.typeName.IsSameIdentifier(nodeType.typeName))
                     {
                         // Same pointer type.
                     }
@@ -923,7 +907,7 @@ internal class Node
                     {
                         // Incompatible pointers, disallow. XXX test this.
                         throw new PascalError(this.token, "can't cast from pointer to " +
-                                              nodeType.print() + " to pointer to " + type.print());
+                                              nodeType.Print() + " to pointer to " + type.Print());
                     }
                 }
             }
@@ -936,9 +920,4 @@ internal class Node
         // Nothing to cast, return existing node.
         return this;
     }
-
-
-
-
-
 }

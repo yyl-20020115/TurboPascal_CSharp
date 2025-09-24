@@ -3,20 +3,20 @@
 public class Token(string value, int tokenType)
 {
     // Token types.
-    public static int IDENTIFIER = 0;
-    public static int NUMBER = 1;
-    public static int SYMBOL = 2;
-    public static int COMMENT = 3;
-    public static int STRING = 4;
-    public static int EOF = 5;
-    public static int RESERVED_WORD = 6;
+    public const int IDENTIFIER = 0;
+    public const int NUMBER = 1;
+    public const int SYMBOL = 2;
+    public const int COMMENT = 3;
+    public const int STRING = 4;
+    public const int EOF = 5;
+    public const int RESERVED_WORD = 6;
     public string value = value;
     public int tokenType = tokenType;
     public int lineNumber = -1;
 
     // Returns whether this token is a reserved word, such as "for". These are
     // case-insensitive.
-    public bool isReservedWord(string reservedWord)
+    public bool IsReservedWord(string reservedWord)
     {
         return this.tokenType == Token.RESERVED_WORD &&
             this.value.ToLower() == reservedWord.ToLower();
@@ -24,13 +24,13 @@ public class Token(string value, int tokenType)
 
     // Returns whether this token is equal to the specified token. The line
     // number is not taken into account; only the type and value.
-    public bool isEqualTo(Token other)
+    public bool IsEqualTo(Token other)
     {
         return this.tokenType == other.tokenType && this.value == other.value;
     }
 
     // Returns whether this is the specified symbol.
-    public bool isSymbol(string symbol)
+    public bool IsSymbol(string symbol)
     {
         return this.tokenType == Token.SYMBOL && this.value == symbol;
     }

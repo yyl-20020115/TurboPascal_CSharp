@@ -8,29 +8,27 @@ internal class RawData
     internal List<object> data;
     internal List<int> simpleTypeCodes;
 
-    public RawData() {
-            this.length = 0;
-            this.data = new List<object>();
-            this.simpleTypeCodes = new List<int>();
-        }
+    public RawData()
+    {
+        this.length = 0;
+        this.data = [];
+        this.simpleTypeCodes = [];
+    }
 
-        // Adds a piece of data and its simple type (inst.I, etc.) to the list.
-        public void add(object datum, int simpleTypeCode) {
-            this.length++;
-            this.data.Add(datum);
-            this.simpleTypeCodes.Add(simpleTypeCode);
-        }
+    // Adds a piece of data and its simple type (inst.I, etc.) to the list.
+    public void Add(object datum, int simpleTypeCode)
+    {
+        this.length++;
+        this.data.Add(datum);
+        this.simpleTypeCodes.Add(simpleTypeCode);
+    }
 
-        // Adds a SIMPLE_TYPE node.
-        public void addNode(Node node) {
-            this.add(node.getConstantValue(), node.expressionType.getSimpleTypeCode());
-        }
+    // Adds a SIMPLE_TYPE node.
+    public void AddNode(Node node)
+    {
+        this.Add(node.GetConstantValue(), node.expressionType.GetSimpleTypeCode());
+    }
 
-        // Print the array for human debugging.
-        public string print() {
-            return "(" + string.Join(", ", data.ToArray()) + ")";
-        }
-
-    
-
+    // Print the array for human debugging.
+    public string Print() => "(" + string.Join(", ", data.ToArray()) + ")";
 }

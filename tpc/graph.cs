@@ -1,9 +1,6 @@
 ﻿namespace TPC;
 
-internal class graph
+internal class Graph
 {
-    internal static void importSymbols(SymbolTable symbolTable)
-    {
-        throw new NotImplementedException();
-    }
+    internal static void ImportSymbols(SymbolTable symbolTable) => throw new NotImplementedException();
 }

@@ -73,7 +73,7 @@ internal class Lexer
             // Keep this updated as we walk through the whitespace.
             lineNumber = this.stream.lineNumber;
 
-            ch = this.stream.next();
+            ch = this.stream.Next();
             if (ch == -1)
             {
                 return new Token(null, Token.EOF);
@@ -82,7 +82,7 @@ internal class Lexer
 
         // Check each type of token.
         var token = this.PickLongestToken(ch, SYMBOLS);
-        if (token != null && token.isSymbol("(*"))
+        if (token != null && token.IsSymbol("(*"))
         {
             // Comment.
 
@@ -90,15 +90,15 @@ internal class Lexer
             var value = "";
             while (true)
             {
-                ch = this.stream.next();
+                ch = this.stream.Next();
                 if (ch == -1)
                 {
                     break;
                 }
-                else if (ch == '*' && this.stream.peek() == ')')
+                else if (ch == '*' && this.stream.Peek() == ')')
                 {
                     // Skip ")".
-                    this.stream.next();
+                    this.stream.Next();
                     break;
                 }
                 value += ch;
@@ -112,12 +112,12 @@ internal class Lexer
             while (true)
             {
                 value += ch;
-                ch = this.stream.peek();
+                ch = this.stream.Peek();
                 if (ch == -1 || !Utils.IsIdentifierPart(ch))
                 {
                     break;
                 }
-                this.stream.next();
+                this.stream.Next();
             }
             var tokenType = IsReservedWord(value) ? Token.RESERVED_WORD : Token.IDENTIFIER;
             token = new Token(value, tokenType);
@@ -127,11 +127,11 @@ internal class Lexer
             if (ch == '.')
             {
                 // This could be a number, a dot, or two dots.
-                var nextCh = this.stream.peek();
+                var nextCh = this.stream.Peek();
                 if (nextCh == '.')
                 {
                     // Two dots.
-                    this.stream.next();
+                    this.stream.Next();
                     token = new Token("..", Token.SYMBOL);
                 }
                 else if (!Utils.IsDigit(nextCh))
@@ -155,7 +155,7 @@ internal class Lexer
                 while (true)
                 {
                     value += ch;
-                    ch = this.stream.peek();
+                    ch = this.stream.Peek();
                     if (ch == -1)
                     {
                         break;
@@ -164,9 +164,9 @@ internal class Lexer
                     {
                         // This may be a decimal point, but it may be the start
                         // of a ".." symbol. Peek twice and push back.
-                        this.stream.next();
-                        var nextCh = this.stream.peek();
-                        this.stream.pushBack(ch);
+                        this.stream.Next();
+                        var nextCh = this.stream.Peek();
+                        this.stream.PushBack(ch);
                         if (nextCh == '.')
                         {
                             // Double dot, end of number.
@@ -210,7 +210,7 @@ internal class Lexer
                     {
                         break;
                     }
-                    this.stream.next();
+                    this.stream.Next();
                 }
                 token = new Token(value, Token.NUMBER);
             }
@@ -220,14 +220,14 @@ internal class Lexer
             // Comment.
 
             // Skip opening brace.
-            ch = this.stream.next();
+            ch = this.stream.Next();
 
             // Keep adding more characters until we're not part of this token anymore.
             var value = "";
             while (true)
             {
                 value += ch;
-                ch = this.stream.next();
+                ch = this.stream.Next();
                 if (ch == -1 || ch == '}')
                 {
                     break;
@@ -240,21 +240,21 @@ internal class Lexer
             // String literal.
 
             // Skip opening quote.
-            ch = this.stream.next();
+            ch = this.stream.Next();
 
             // Keep adding more characters until we're not part of this token anymore.
             var value = "";
             while (true)
             {
                 value += ch;
-                ch = this.stream.next();
+                ch = this.stream.Next();
                 if (ch == '\'')
                 {
                     // Handle double quotes.
-                    if (this.stream.peek() == '\'')
+                    if (this.stream.Peek() == '\'')
                     {
                         // Eat next quote. First one will be added at top of loop.
-                        this.stream.next();
+                        this.stream.Next();
                     }
                     else
                     {
@@ -290,7 +290,7 @@ internal class Lexer
    public Token PickLongestToken(char ch,string[] symbols)
     {
         string longestSymbol = null;
-        var nextCh = this.stream.peek();
+        var nextCh = this.stream.Peek();
         var twoCh = nextCh == -1 ? ch : ch + nextCh;
 
         for (var i = 0; i < symbols.Length; i++)
@@ -316,11 +316,9 @@ internal class Lexer
         if (longestSymbol.Length == 2)
         {
             // Eat the second character.
-            this.stream.next();
+            this.stream.Next();
         }
 
         return new Token(longestSymbol, Token.SYMBOL);
     }
-     
-
 }

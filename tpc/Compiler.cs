@@ -3,7 +3,7 @@
 // Compiler from parse tree to bytecode.
 internal class Compiler
 {
-    private readonly Stack<int> exitInstructions=[];
+    private readonly Stack<int> exitInstructions = [];
 
     public Compiler()
     {
@@ -53,33 +53,18 @@ internal class Compiler
                     // but loading the value directly is more efficient.
                     if (symbolLookup.symbol.type.nodeType == Node.SIMPLE_TYPE)
                     {
-                        int opcode;
-                        switch (symbolLookup.symbol.type.typeCode)
+                        var opcode = symbolLookup.symbol.type.typeCode switch
                         {
-                            case Inst.defs.A:
-                                opcode = Inst.defs.LVA;
-                                break;
-                            case Inst.defs.B:
-                                opcode = Inst.defs.LVB;
-                                break;
-                            case Inst.defs.C:
-                                opcode = Inst.defs.LVC;
-                                break;
-                            case Inst.defs.I:
-                                opcode = Inst.defs.LVI;
-                                break;
-                            case Inst.defs.R:
-                                opcode = Inst.defs.LVR;
-                                break;
-                            case Inst.defs.S:
-                                // A string is not a character, but there's no opcode
-                                // for loading a string. Re-use LVC.
-                                opcode = Inst.defs.LVC;
-                                break;
-                            default:
-                                throw new PascalError(node.token, "can't make code to get " +
-                                                     symbolLookup.symbol.type.print());
-                        }
+                            Inst.defs.A => Inst.defs.LVA,
+                            Inst.defs.B => Inst.defs.LVB,
+                            Inst.defs.C => Inst.defs.LVC,
+                            Inst.defs.I => Inst.defs.LVI,
+                            Inst.defs.R => Inst.defs.LVR,
+                            Inst.defs.S => Inst.defs.LVC,// A string is not a character, but there's no opcode
+                                                         // for loading a string. Re-use LVC.
+                            _ => throw new PascalError(node.token, "can't make code to get " +
+                                                                                 symbolLookup.symbol.type.Print()),
+                        };
                         bytecode.Add(opcode, symbolLookup.level,
                                      symbolLookup.symbol.address, "value of " + name);
                     }
@@ -87,7 +72,7 @@ internal class Compiler
                     {
                         // This is a more complex type, and apparently it's being
                         // passed by value, so we push the entire thing onto the stack.
-                        var size = symbolLookup.symbol.type.getTypeSize();
+                        var size = symbolLookup.symbol.type.GetTypeSize();
                         // For large parameters it would be more
                         // space-efficient (but slower) to have a loop.
                         for (var i = 0; i < size; i++)
@@ -100,19 +85,12 @@ internal class Compiler
                 }
                 break;
             case Node.NUMBER:
-                var vNumber = (int)node.getNumber();
+                var vNumber = (int)node.GetNumber();
                 var cindex = bytecode.AddConstant(vNumber);
 
                 // See if we're an integer or real.
                 int typeCodeNumber;
-                if ((vNumber | 0) == vNumber)
-                {
-                    typeCodeNumber = Inst.defs.I;
-                }
-                else
-                {
-                    typeCodeNumber = Inst.defs.R;
-                }
+                typeCodeNumber = (vNumber | 0) == vNumber ? Inst.defs.I : Inst.defs.R;
 
                 bytecode.Add(Inst.defs.LDC, typeCodeNumber, cindex, "constant value " + vNumber);
                 break;
@@ -123,7 +101,7 @@ internal class Compiler
                 break;
             case Node.BOOLEAN:
                 var vBoolean = node.token.value;
-                bytecode.Add(Inst.defs.LDC, Inst.defs.B, node.getBoolean() ? 1 : 0, "boolean " + vBoolean);
+                bytecode.Add(Inst.defs.LDC, Inst.defs.B, node.GetBoolean() ? 1 : 0, "boolean " + vBoolean);
                 break;
             case Node.POINTER:
                 // This can only be nil.
@@ -175,7 +153,7 @@ internal class Compiler
                 var rtnAddress = bytecode.GetNextAddress();
 
                 bytecode.Add(Inst.defs.RTN, isFunction ? node.expressionType.
-                             returnType.getSimpleTypeCode() : Inst.defs.P, 0, "end of " + nameFunction);
+                             returnType.GetSimpleTypeCode() : Inst.defs.P, 0, "end of " + nameFunction);
 
                 // Update all of the UJP statements to point to RTN.
                 for (var i = 0; i < ujpAddresses.Length; i++)
@@ -201,14 +179,14 @@ internal class Compiler
                 this.GenerateBytecode(bytecode, node.expression, symbolTable);
                 var fromType = node.expression.expressionType;
                 var toType = node.type;
-                if (fromType.isSimpleType(Inst.defs.I) && toType.isSimpleType(Inst.defs.R))
+                if (fromType.IsSimpleType(Inst.defs.I) && toType.IsSimpleType(Inst.defs.R))
                 {
                     bytecode.Add(Inst.defs.FLT, 0, 0, "cast to float");
                 }
                 else
                 {
                     throw new PascalError(node.token, "don't know how to compile a cast from " +
-                                         fromType.print() + " to " + toType.print());
+                                         fromType.Print() + " to " + toType.Print());
                 }
                 break;
             case Node.ASSIGNMENT:
@@ -220,9 +198,9 @@ internal class Compiler
 
                 // We don't look at the type code when executing, but might as
                 // well set it anyway.
-                var storeTypeCode = node.rhs.expressionType.getSimpleTypeCode();
+                var storeTypeCode = node.rhs.expressionType.GetSimpleTypeCode();
 
-                bytecode.Add(Inst.defs.STI, storeTypeCode, 0, "store into " + node.lhs.print());
+                bytecode.Add(Inst.defs.STI, storeTypeCode, 0, "store into " + node.lhs.Print());
                 break;
             case Node.PROCEDURE_CALL:
             case Node.FUNCTION_CALL:
@@ -261,9 +239,9 @@ internal class Compiler
                 else
                 {
                     // Call procedure/function.
-                    var parameterSize = symbol.type.getTotalParameterSize();
+                    var parameterSize = symbol.type.GetTotalParameterSize();
                     bytecode.Add(Inst.defs.CUP, parameterSize, symbol.address,
-                                 "call " + node.name.print());
+                                 "call " + node.name.Print());
                 }
                 break;
             case Node.REPEAT:
@@ -278,7 +256,7 @@ internal class Compiler
                 var varNode = node.variable;
                 this.GenerateAddressBytecode(bytecode, varNode, symbolTable);
                 this.GenerateBytecode(bytecode, node.fromExpr, symbolTable);
-                bytecode.Add(Inst.defs.STI, 0, 0, "store into " + varNode.print());
+                bytecode.Add(Inst.defs.STI, 0, 0, "store into " + varNode.Print());
 
                 // Comparison.
                 var topOfLoopFOR = bytecode.GetNextAddress();
@@ -303,7 +281,7 @@ internal class Compiler
                 {
                     bytecode.Add(Inst.defs.INC, Inst.defs.I, 0, "increment loop variable");
                 }
-                bytecode.Add(Inst.defs.STI, 0, 0, "store into " + varNode.print());
+                bytecode.Add(Inst.defs.STI, 0, 0, "store into " + varNode.Print());
 
                 // Jump back to top.
                 bytecode.Add(Inst.defs.UJP, 0, topOfLoopFOR, "jump to top of loop");
@@ -381,7 +359,7 @@ internal class Compiler
                     var typeCode = node.rawData.simpleTypeCodes[i];
 
                     bytecode.Add(Inst.defs.LDA, 0, node.symbol.address + i,
-                                 "address of " + node.name.print() +
+                                 "address of " + node.name.Print() +
                                  " on stack (element " + i + ")");
                     // It's absurd to create this many constants, one for each
                     // address in the const pool, but I don't see another
@@ -392,7 +370,7 @@ internal class Compiler
                     // don't have a POP instruction.
                     var cindexTYPED_CONST = bytecode.AddConstant(constAddress + i);
                     bytecode.Add(Inst.defs.LDC, Inst.defs.A, cindexTYPED_CONST, "address of " +
-                                 node.name.print() + " in const area (element " + i + ")");
+                                 node.name.Print() + " in const area (element " + i + ")");
                     bytecode.Add(Inst.defs.LDI, typeCode, 0, "value of element");
                     bytecode.Add(Inst.defs.STI, typeCode, 0, "write value");
                 }
@@ -404,7 +382,7 @@ internal class Compiler
                 break;
             case Node.NEGATIVE:
                 this.GenerateBytecode(bytecode, node.expression, symbolTable);
-                if (node.expression.expressionType.isSimpleType(Inst.defs.R))
+                if (node.expression.expressionType.IsSimpleType(Inst.defs.R))
                 {
                     bytecode.Add(Inst.defs.NGR, 0, 0, "real sign inversion");
                 }
@@ -414,30 +392,30 @@ internal class Compiler
                 }
                 break;
             case Node.ADDITION:
-                this._generateNumericBinaryBytecode(bytecode, node, symbolTable,
+                this.GenerateNumericBinaryBytecode(bytecode, node, symbolTable,
                                                     "add", Inst.defs.ADI, Inst.defs.ADR);
                 break;
             case Node.SUBTRACTION:
-                this._generateNumericBinaryBytecode(bytecode, node, symbolTable,
+                this.GenerateNumericBinaryBytecode(bytecode, node, symbolTable,
                                                     "subtract", Inst.defs.SBI, Inst.defs.SBR);
                 break;
             case Node.MULTIPLICATION:
-                this._generateNumericBinaryBytecode(bytecode, node, symbolTable,
+                this.GenerateNumericBinaryBytecode(bytecode, node, symbolTable,
                                                     "multiply", Inst.defs.MPI, Inst.defs.MPR);
                 break;
             case Node.DIVISION:
-                this._generateNumericBinaryBytecode(bytecode, node, symbolTable,
+                this.GenerateNumericBinaryBytecode(bytecode, node, symbolTable,
                                                     "divide", null, Inst.defs.DVR);
                 break;
             case Node.FIELD_DESIGNATOR:
                 this.GenerateAddressBytecode(bytecode, node, symbolTable);
-                bytecode.Add(Inst.defs.LDI, node.expressionType.getSimpleTypeCode(), 0,
+                bytecode.Add(Inst.defs.LDI, node.expressionType.GetSimpleTypeCode(), 0,
                              "load value of record field");
                 break;
             case Node.ARRAY:
                 // Array lookup.
                 this.GenerateAddressBytecode(bytecode, node, symbolTable);
-                bytecode.Add(Inst.defs.LDI, node.expressionType.getSimpleTypeCode(), 0,
+                bytecode.Add(Inst.defs.LDI, node.expressionType.GetSimpleTypeCode(), 0,
                              "load value of array element");
                 break;
             case Node.ADDRESS_OF:
@@ -445,7 +423,7 @@ internal class Compiler
                 break;
             case Node.DEREFERENCE:
                 this.GenerateBytecode(bytecode, node.variable, symbolTable);
-                bytecode.Add(Inst.defs.LDI, node.expressionType.getSimpleTypeCode(), 0,
+                bytecode.Add(Inst.defs.LDI, node.expressionType.GetSimpleTypeCode(), 0,
                              "load value pointed to by pointer");
                 break;
             case Node.EQUALITY:
@@ -481,11 +459,11 @@ internal class Compiler
                                                        "or", Inst.defs.IOR);
                 break;
             case Node.INTEGER_DIVISION:
-                this._generateNumericBinaryBytecode(bytecode, node, symbolTable,
+                this.GenerateNumericBinaryBytecode(bytecode, node, symbolTable,
                                                     "divide", Inst.defs.DVI, null);
                 break;
             case Node.MOD:
-                this._generateNumericBinaryBytecode(bytecode, node, symbolTable,
+                this.GenerateNumericBinaryBytecode(bytecode, node, symbolTable,
                                                     "mod", Inst.defs.MOD, null);
                 break;
             default:
@@ -494,7 +472,7 @@ internal class Compiler
     }
 
     // Generates code to do math on two operands.
-    public void _generateNumericBinaryBytecode(ByteCode bytecode, Node node, SymbolTable symbolTable, string opName, int? integerOpcode, int? realOpcode)
+    public void GenerateNumericBinaryBytecode(ByteCode bytecode, Node node, SymbolTable symbolTable, string opName, int? integerOpcode, int? realOpcode)
     {
 
         this.GenerateBytecode(bytecode, node.lhs, symbolTable);
@@ -519,13 +497,13 @@ internal class Compiler
                     break;
                 default:
                     throw new PascalError(node.token, "can't " + opName + " operands of type " +
-                        Inst.defs.typeCodeToName(node.expressionType.typeCode));
+                        Inst.defs.TypeCodeToName(node.expressionType.typeCode));
             }
         }
         else
         {
             throw new PascalError(node.token, "can't " + opName +
-                                 " operands of type " + node.expressionType.print());
+                                 " operands of type " + node.expressionType.Print());
         }
     }
 
@@ -543,7 +521,7 @@ internal class Compiler
         else
         {
             throw new PascalError(node.token, "can't do " + opName +
-                                 " operands of type " + opType.print());
+                                 " operands of type " + opType.Print());
         }
     }
 
@@ -567,7 +545,7 @@ internal class Compiler
                     ix = Inst.defs.LDA;
                 }
                 bytecode.Add(ix, symbolLookup.level,
-                             symbolLookup.symbol.address, "address of " + node.print());
+                             symbolLookup.symbol.address, "address of " + node.Print());
                 break;
 
             case Node.ARRAY:
@@ -577,7 +555,7 @@ internal class Compiler
                 var strides = new Stack<int>();
 
                 // Start with the array's element size.
-                strides.Push((int)arrayType.elementType.getTypeSize());
+                strides.Push((int)arrayType.elementType.GetTypeSize());
 
                 for (int i = 0; i < node.indices.Length; i++)
                 {
@@ -585,15 +563,15 @@ internal class Compiler
                     this.GenerateBytecode(bytecode, node.indices[i], symbolTable);
 
                     // Subtract lower bound.
-                    var low = arrayType.ranges[i].getRangeLowBound();
+                    var low = arrayType.ranges[i].GetRangeLowBound();
                     var cindexARRAY = bytecode.AddConstant(low);
                     bytecode.Add(Inst.defs.LDC, Inst.defs.I, cindexARRAY, "lower bound " + low);
                     bytecode.Add(Inst.defs.SBI, 0, 0, "subtract lower bound");
 
                     // Add new stride.
-                    var size = (int)arrayType.ranges[i].getRangeSize();
+                    var size = (int)arrayType.ranges[i].GetRangeSize();
                     strides.Push(strides.ElementAt(strides.Count - 1) * size);
-                    
+
                     // This would be a good place to do a runtime bounds check since
                     // we have the index and the size. The top of the stack should be
                     // non-negative and less than size.
@@ -636,20 +614,20 @@ internal class Compiler
                 break;
 
             default:
-                throw new PascalError(null, "unknown LHS node " + node.print());
+                throw new PascalError(null, "unknown LHS node " + node.Print());
         }
     }
 
     // Start a frame for a function/procedure.
     public void BeginExitFrame()
     {
-        this.exitInstructions.Push( (new int[0] { }).First());  //TODO: MVM
+        this.exitInstructions.Push((Array.Empty<int>()).First());  //TODO: MVM
     }
 
     // Add an address of an instruction to update once we know the end of the function.
     public void AddExitInstruction(int address)
     {
-       // this.exitInstructions[this.exitInstructions.Count - 1].push(address); //TODO: MVM
+        // this.exitInstructions[this.exitInstructions.Count - 1].push(address); //TODO: MVM
     }
 
     // End a frame for a function/procedure, returning a list of addresses of UJP functions

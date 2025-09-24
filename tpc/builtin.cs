@@ -57,20 +57,13 @@ internal class Builtin
             (double t) =>
             {
                 Random rand = new Random();
-                if (t == null)
-                {
-                    return rand.NextDouble();
-                }
-                else
-                {
-                    return Math.Round(rand.NextDouble() * t);
-                }
+                return t == null ? rand.NextDouble() : Math.Round(rand.NextDouble() * t);
             });
         symbolTable.AddNativeFunction("Randomize", Node.voidType, new List<Node>(),
                     () => { /* Nothing. */ });
         var symbol = symbolTable.AddNativeFunction("Inc", Node.voidType,
 
-            new List<Node>() { Node.integerType, Node.integerType }, (Machine.Control ctl, int v, int? dv) =>
+            [Node.integerType, Node.integerType], (Machine.Control ctl, int v, int? dv) =>
             {
 
                 if (dv == null)

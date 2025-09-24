@@ -8,7 +8,7 @@ internal class Parser(CommentStripper lexer)
     // Parse an entire Pascal program.
     public Node Parse(SymbolTable symbolTable)
     {
-        var node = this._parseSubprogramDeclaration(symbolTable, Node.PROGRAM);
+        var node = this.ParseSubprogramDeclaration(symbolTable, Node.PROGRAM);
 
         return node;
     }
@@ -21,13 +21,13 @@ internal class Parser(CommentStripper lexer)
     public bool MoreToCome(string separator, string terminator)
     {
         var token = this.lexer.Peek();
-        if (token.isSymbol(separator))
+        if (token.IsSymbol(separator))
         {
             // More to come. Eat the separator.
             this.lexer.Next();
             return true;
         }
-        else if (token.isSymbol(terminator))
+        else if (token.IsSymbol(terminator))
         {
             // We're done. Leave the terminator.
             return false;
@@ -46,7 +46,7 @@ internal class Parser(CommentStripper lexer)
         var token = this.lexer.Next();
         if (message == null)
             message = ("expected reserved word \"" + reservedWord + "\"");
-        if (!token.isReservedWord(reservedWord))
+        if (!token.IsReservedWord(reservedWord))
         {
             throw new PascalError(token, message);
         }
@@ -85,13 +85,13 @@ internal class Parser(CommentStripper lexer)
         var declarations = new Dictionary<string, Node>();
 
         // Parse each declaration or block.
-        while (!this.lexer.Peek().isReservedWord("begin"))
+        while (!this.lexer.Peek().IsReservedWord("begin"))
         {
             // This parser also eats the semicolon after the declaration.
             var nodes = this.ParseDeclaration(symbolTable);
 
             // Extend the declarations array with the nodes array.
-           //TODO: MVM declarations.push.apply(declarations, nodes);
+            //TODO: MVM declarations.push.apply(declarations, nodes);
         }
 
         return declarations;
@@ -103,32 +103,32 @@ internal class Parser(CommentStripper lexer)
     {
         var token = this.lexer.Peek();
 
-        if (token.isReservedWord("uses"))
+        if (token.IsReservedWord("uses"))
         {
             return this.ParseUsesDeclaration(symbolTable);
         }
-        else if (token.isReservedWord("var"))
+        else if (token.IsReservedWord("var"))
         {
             this.ExpectReservedWord("var");
             return this._parseVarDeclaration(symbolTable);
         }
-        else if (token.isReservedWord("const"))
+        else if (token.IsReservedWord("const"))
         {
             this.ExpectReservedWord("const");
-            return this._parseConstDeclaration(symbolTable);
+            return this.ParseConstDeclaration(symbolTable);
         }
-        else if (token.isReservedWord("type"))
+        else if (token.IsReservedWord("type"))
         {
             this.ExpectReservedWord("type");
-            return this._parseTypeDeclaration(symbolTable);
+            return this.ParseTypeDeclaration(symbolTable);
         }
-        else if (token.isReservedWord("procedure"))
+        else if (token.IsReservedWord("procedure"))
         {
-            return new List<Node>() { this._parseSubprogramDeclaration(symbolTable, Node.PROCEDURE) };
+            return new List<Node>() { this.ParseSubprogramDeclaration(symbolTable, Node.PROCEDURE) };
         }
-        else if (token.isReservedWord("function"))
+        else if (token.IsReservedWord("function"))
         {
-            return new List<Node>() { this._parseSubprogramDeclaration(symbolTable, Node.FUNCTION) };
+            return new List<Node>() { this.ParseSubprogramDeclaration(symbolTable, Node.FUNCTION) };
         }
         else if (token.tokenType == Token.EOF)
         {
@@ -155,7 +155,7 @@ internal class Parser(CommentStripper lexer)
                 });
 
             // Import the module's symbols into this symbol table.
-            modules.importModule(token.value, symbolTable);
+            Modules.ImportModule(token.value, symbolTable);
 
             nodes.Add(node);
         } while (this.MoreToCome(",", ";"));
@@ -187,7 +187,7 @@ internal class Parser(CommentStripper lexer)
             this.ExpectSymbol(":");
 
             // Parse the variable's type.
-            var type = this._parseType(symbolTable);
+            var type = this.ParseType(symbolTable);
 
             // Set the type of all nodes for this line.
             for (var i = startNode; i < nodes.Count; i++)
@@ -210,7 +210,7 @@ internal class Parser(CommentStripper lexer)
 
     // Parse "const" declaration, which is an identifier, optional type, and
     // required value. Returns an array of nodes.
-    public List<Node> _parseConstDeclaration(SymbolTable symbolTable)
+    public List<Node> ParseConstDeclaration(SymbolTable symbolTable)
     {
         var nodes = new List<Node>();
 
@@ -223,10 +223,10 @@ internal class Parser(CommentStripper lexer)
             // Parse optional type.
             Node type = null;
             token = this.lexer.Peek();
-            if (token.isSymbol(":"))
+            if (token.IsSymbol(":"))
             {
                 this.lexer.Next();
-                type = this._parseType(symbolTable);
+                type = this.ParseType(symbolTable);
             }
 
             // Parse value. How we do this depends on whether it's a typed constant,
@@ -238,7 +238,7 @@ internal class Parser(CommentStripper lexer)
             if (type == null)
             {
                 // Constant.
-                var expression = this._parseExpression(symbolTable);
+                var expression = this.ParseExpression(symbolTable);
                 node = new Node(Node.CONST, null, new Dictionary<string, object>{
                     { "name", identifierNode },
                 { "type", expression.expressionType },
@@ -253,7 +253,7 @@ internal class Parser(CommentStripper lexer)
                 // XXX We need to verify type compatibility throughout here.
                 if (type.nodeType == Node.ARRAY_TYPE)
                 {
-                    rawData = this._parseArrayConstant(symbolTable, type);
+                    rawData = this.ParseArrayConstant(symbolTable, type);
                 }
                 else if (type.nodeType == Node.RECORD_TYPE)
                 {
@@ -262,7 +262,7 @@ internal class Parser(CommentStripper lexer)
                 else if (type.nodeType == Node.SIMPLE_TYPE)
                 {
                     rawData = new RawData();
-                    rawData.addNode(this._parseExpression(symbolTable));
+                    rawData.AddNode(this.ParseExpression(symbolTable));
                 }
                 else
                 {
@@ -294,7 +294,7 @@ internal class Parser(CommentStripper lexer)
 
     // Parse an array constant, which is a parenthesized list of constants. These
     // can be nested for multi-dimensional arrays. Returns a RawData object.
-    public RawData _parseArrayConstant(SymbolTable symbolTable, Node type)
+    public RawData ParseArrayConstant(SymbolTable symbolTable, Node type)
     {
         // The raw linear (in-memory) version of the data.
         var rawData = new RawData();
@@ -308,14 +308,14 @@ internal class Parser(CommentStripper lexer)
         {
             self.ExpectSymbol("(");
 
-            var low = type.ranges[d].getRangeLowBound();
-            var high = type.ranges[d].getRangeHighBound();
+            var low = type.ranges[d].GetRangeLowBound();
+            var high = type.ranges[d].GetRangeHighBound();
             for (var i = low; i <= high; i++)
             {
                 if (d == type.ranges.Length - 1)
                 {
                     // Parse the next constant.
-                    rawData.addNode(self._parseExpression(symbolTable));
+                    rawData.AddNode(self.ParseExpression(symbolTable));
                 }
                 else
                 {
@@ -338,7 +338,7 @@ internal class Parser(CommentStripper lexer)
 
     // Parse "type" declaration, which is an identifier and a type. Returns an
     // array of nodes.
-    public List<Node> _parseTypeDeclaration(SymbolTable symbolTable)
+    public List<Node> ParseTypeDeclaration(SymbolTable symbolTable)
     {
         var nodes = new List<Node>();
 
@@ -357,7 +357,7 @@ internal class Parser(CommentStripper lexer)
             var equalToken = this.ExpectSymbol("=");
 
             // Parse type.
-            var type = this._parseType(symbolTable, incompleteTypes);
+            var type = this.ParseType(symbolTable, incompleteTypes);
 
             // Create the node.
             var node = new Node(Node.TYPE, equalToken, new Dictionary<string, object>{
@@ -386,7 +386,7 @@ internal class Parser(CommentStripper lexer)
     }
 
     // Parse procedure, function, or program declaration.
-    public Node _parseSubprogramDeclaration(SymbolTable symbolTable, int nodeType)
+    public Node ParseSubprogramDeclaration(SymbolTable symbolTable, int nodeType)
     {
         // Get the string like "procedure", etc.
         var declType = Node.nodeLabel[nodeType];
@@ -403,7 +403,7 @@ internal class Parser(CommentStripper lexer)
         // Parse the parameters.
         var token = this.lexer.Peek();
         var parameters = new List<Node>();
-        if (token.isSymbol("("))
+        if (token.IsSymbol("("))
         {
             this.ExpectSymbol("(");
 
@@ -413,7 +413,7 @@ internal class Parser(CommentStripper lexer)
                 var byReference = false;
 
                 // See if we're passing this batch by reference.
-                if (this.lexer.Peek().isReservedWord("var"))
+                if (this.lexer.Peek().IsReservedWord("var"))
                 {
                     this.ExpectReservedWord("var");
                     byReference = true;
@@ -432,7 +432,7 @@ internal class Parser(CommentStripper lexer)
                 var colon = this.ExpectSymbol(":");
 
                 // Add the type to each parameter.
-                var type1 = this._parseType(symbolTableLocal);
+                var type1 = this.ParseType(symbolTableLocal);
                 for (var i = start; i < parameters.Count; i++)
                 {
                     parameters[i].type = type1;
@@ -456,7 +456,7 @@ internal class Parser(CommentStripper lexer)
         if (nodeType == Node.FUNCTION)
         {
             this.ExpectSymbol(":");
-            returnType = this._parseType(symbolTableLocal);
+            returnType = this.ParseType(symbolTableLocal);
         }
         else
         {
@@ -487,7 +487,7 @@ internal class Parser(CommentStripper lexer)
         var declarations = this.ParseDeclarations(symbolTable);
 
         // Parse begin/end block.
-        var block = this._parseBlock(symbolTable, "begin", "end");
+        var block = this.ParseBlock(symbolTable, "begin", "end");
 
         // Make node.
         var node = new Node(nodeType, procedureToken, new Dictionary<string, object> {
@@ -511,7 +511,7 @@ internal class Parser(CommentStripper lexer)
 
     // Parse a begin/end block. The startWord must be the next token. The endWord
     // will end the block and is eaten.
-    public Node _parseBlock(SymbolTable symbolTable, string startWord, string endWord)
+    public Node ParseBlock(SymbolTable symbolTable, string startWord, string endWord)
     {
         var token = this.ExpectReservedWord(startWord);
         var statements = new List<Node>();
@@ -520,13 +520,13 @@ internal class Parser(CommentStripper lexer)
         while (!foundEnd)
         {
             token = this.lexer.Peek();
-            if (token.isReservedWord(endWord))
+            if (token.IsReservedWord(endWord))
             {
                 // End of block.
                 this.lexer.Next();
                 foundEnd = true;
             }
-            else if (token.isSymbol(";"))
+            else if (token.IsSymbol(";"))
             {
                 // Empty statement.
                 this.lexer.Next();
@@ -534,11 +534,11 @@ internal class Parser(CommentStripper lexer)
             else
             {
                 // Parse statement.
-                statements.Add(this._parseStatement(symbolTable));
+                statements.Add(this.ParseStatement(symbolTable));
 
                 // After an actual statement, we require a semicolon or end of block.
                 token = this.lexer.Peek();
-                if (!token.isReservedWord(endWord) && !token.isSymbol(";"))
+                if (!token.IsReservedWord(endWord) && !token.IsSymbol(";"))
                 {
                     throw new PascalError(token, "expected \";\" or \"" + endWord + "\"");
                 }
@@ -551,52 +551,52 @@ internal class Parser(CommentStripper lexer)
     }
 
     // Parse a statement, such as a for loop, while loop, assignment, or procedure call.
-    public Node _parseStatement(SymbolTable symbolTable)
+    public Node ParseStatement(SymbolTable symbolTable)
     {
         var token = this.lexer.Peek();
         Node node;
 
         // Handle simple constructs.
-        if (token.isReservedWord("if"))
+        if (token.IsReservedWord("if"))
         {
-            node = this._parseIfStatement(symbolTable);
+            node = this.ParseIfStatement(symbolTable);
         }
-        else if (token.isReservedWord("while"))
+        else if (token.IsReservedWord("while"))
         {
-            node = this._parseWhileStatement(symbolTable);
+            node = this.ParseWhileStatement(symbolTable);
         }
-        else if (token.isReservedWord("repeat"))
+        else if (token.IsReservedWord("repeat"))
         {
-            node = this._parseRepeatStatement(symbolTable);
+            node = this.ParseRepeatStatement(symbolTable);
         }
-        else if (token.isReservedWord("for"))
+        else if (token.IsReservedWord("for"))
         {
-            node = this._parseForStatement(symbolTable);
+            node = this.ParseForStatement(symbolTable);
         }
-        else if (token.isReservedWord("begin"))
+        else if (token.IsReservedWord("begin"))
         {
-            node = this._parseBlock(symbolTable, "begin", "end");
+            node = this.ParseBlock(symbolTable, "begin", "end");
         }
-        else if (token.isReservedWord("exit"))
+        else if (token.IsReservedWord("exit"))
         {
-            node = this._parseExitStatement(symbolTable);
+            node = this.ParseExitStatement(symbolTable);
         }
         else if (token.tokenType == Token.IDENTIFIER)
         {
             // This could be an assignment or procedure call. Both start with an identifier.
-            node = this._parseVariable(symbolTable);
+            node = this.ParseVariable(symbolTable);
 
             // See if this is an assignment or procedure call.
             token = this.lexer.Peek();
-            if (token.isSymbol(":="))
+            if (token.IsSymbol(":="))
             {
                 // It's an assignment.
-                node = this._parseAssignment(symbolTable, node);
+                node = this.ParseAssignment(symbolTable, node);
             }
             else if (node.nodeType == Node.IDENTIFIER)
             {
                 // Must be a procedure call.
-                node = this._parseProcedureCall(symbolTable, node);
+                node = this.ParseProcedureCall(symbolTable, node);
             }
             else
             {
@@ -616,7 +616,7 @@ internal class Parser(CommentStripper lexer)
     // "variable.fieldName", or a pointer dereference, like "variable^". In all
     // three cases the "variable" part is itself a variable. This function always
     // returns a node of type IDENTIFIER, ARRAY, FIELD_DESIGNATOR, or DEREFERENCE.
-    public Node _parseVariable(SymbolTable symbolTable)
+    public Node ParseVariable(SymbolTable symbolTable)
     {
         // Variables always start with an identifier.
         var identifierToken = this.ExpectIdentifier("expected identifier");
@@ -633,22 +633,22 @@ internal class Parser(CommentStripper lexer)
         while (true)
         {
             var nextToken = this.lexer.Peek();
-            if (nextToken.isSymbol("["))
+            if (nextToken.IsSymbol("["))
             {
                 // Replace the node with an array node.
-                node = this._parseArrayDereference(symbolTable, node);
+                node = this.ParseArrayDereference(symbolTable, node);
             }
-            else if (nextToken.isSymbol("."))
+            else if (nextToken.IsSymbol("."))
             {
                 // Replace the node with a record designator node.
-                node = this._parseRecordDesignator(symbolTable, node);
+                node = this.ParseRecordDesignator(symbolTable, node);
             }
-            else if (nextToken.isSymbol("^"))
+            else if (nextToken.IsSymbol("^"))
             {
                 // Replace the node with a pointer dereference.
                 this.ExpectSymbol("^");
                 var variable = node;
-                if (!variable.expressionType.isSimpleType(Inst.defs.A))
+                if (!variable.expressionType.IsSimpleType(Inst.defs.A))
                 {
                     throw new PascalError(nextToken, "can only dereference pointers");
                 }
@@ -668,20 +668,20 @@ internal class Parser(CommentStripper lexer)
     }
 
     // Parse an assignment. We already have the left-hand-side variable.
-    public Node _parseAssignment(SymbolTable symbolTable, Node variable)
+    public Node ParseAssignment(SymbolTable symbolTable, Node variable)
     {
         var assignToken = this.ExpectSymbol(":=");
 
-        var expression = this._parseExpression(symbolTable);
+        var expression = this.ParseExpression(symbolTable);
         return new Node(Node.ASSIGNMENT, assignToken, new Dictionary<string, object>{
             { "lhs", variable },
-            { "rhs", expression.castToType(variable.expressionType) }
+            { "rhs", expression.CastToType(variable.expressionType) }
     });
     }
 
     // Parse a procedure call. We already have the identifier, so we only need to
     // parse the optional arguments.
-    public Node _parseProcedureCall(SymbolTable symbolTable, Node identifier)
+    public Node ParseProcedureCall(SymbolTable symbolTable, Node identifier)
     {
         // Look up the symbol to make sure it's a procedure.
         var symbolLookup = symbolTable.GetSymbol(identifier.token);
@@ -689,10 +689,10 @@ internal class Parser(CommentStripper lexer)
         identifier.symbolLookup = symbolLookup;
 
         // Verify that it's a procedure.
-        if (symbol.type.nodeType == Node.SUBPROGRAM_TYPE && symbol.type.returnType.isVoidType())
+        if (symbol.type.nodeType == Node.SUBPROGRAM_TYPE && symbol.type.returnType.IsVoidType())
         {
             // Parse optional arguments.
-            var argumentList = this._parseArguments(symbolTable, symbol.type);
+            var argumentList = this.ParseArguments(symbolTable, symbol.type);
 
             // If the call is to the native function "New", then we pass a hidden second
             // parameter, the size of the object to allocate. The procedure needs that
@@ -701,8 +701,8 @@ internal class Parser(CommentStripper lexer)
             {
                 if (argumentList.Count == 1)
                 {
-                    argumentList.Add(Node.makeNumberNode(
-                        argumentList[0].expressionType.type.getTypeSize().ToString()));
+                    argumentList.Add(Node.MakeNumberNode(
+                        argumentList[0].expressionType.type.GetTypeSize().ToString()));
                 }
                 else
                 {
@@ -723,15 +723,15 @@ internal class Parser(CommentStripper lexer)
 
     // Parse an optional argument list. Returns a list of nodes. type is the
     // type of the subprogram being called.
-    public List<Node> _parseArguments(SymbolTable symbolTable, Node type)
+    public List<Node> ParseArguments(SymbolTable symbolTable, Node type)
     {
         var argumentList = new List<Node>();
 
-        if (this.lexer.Peek().isSymbol("("))
+        if (this.lexer.Peek().IsSymbol("("))
         {
             this.ExpectSymbol("(");
             var token = this.lexer.Peek();
-            if (token.isSymbol(")"))
+            if (token.IsSymbol(")"))
             {
                 // Empty arguments.
                 this.lexer.Next();
@@ -760,7 +760,7 @@ internal class Parser(CommentStripper lexer)
                     {
                         // This has to be a variable, not any expression, since
                         // we need its address.
-                        argument = this._parseVariable(symbolTable);
+                        argument = this.ParseVariable(symbolTable);
 
                         // Hack this "byReference" field that'll be used by
                         // the compiler to pass the argument's address.
@@ -768,13 +768,13 @@ internal class Parser(CommentStripper lexer)
                     }
                     else
                     {
-                        argument = this._parseExpression(symbolTable);
+                        argument = this.ParseExpression(symbolTable);
                     }
 
                     // Cast to type of parameter.
                     if (parameter != null)
                     {
-                        argument = argument.castToType(parameter.type);
+                        argument = argument.CastToType(parameter.type);
                     }
 
                     argumentList.Add(argument);
@@ -787,26 +787,26 @@ internal class Parser(CommentStripper lexer)
     }
 
     // Parse an if statement.
-    public Node _parseIfStatement(SymbolTable symbolTable)
+    public Node ParseIfStatement(SymbolTable symbolTable)
     {
         var token = this.ExpectReservedWord("if");
 
-        var expression = this._parseExpression(symbolTable);
-        if (!expression.expressionType.isBooleanType())
+        var expression = this.ParseExpression(symbolTable);
+        if (!expression.expressionType.IsBooleanType())
         {
             throw new PascalError(expression.token, "if condition must be a boolean");
         }
 
         this.ExpectReservedWord("then");
-        var thenStatement = this._parseStatement(symbolTable);
+        var thenStatement = this.ParseStatement(symbolTable);
 
         Node elseStatement = null;
         var elseToken = this.lexer.Peek();
-        if (elseToken.isReservedWord("else"))
+        if (elseToken.IsReservedWord("else"))
         {
             this.ExpectReservedWord("else");
             //var elseStatement = this._parseStatement(symbolTable);  //TODO: MVM
-            elseStatement = this._parseStatement(symbolTable);
+            elseStatement = this.ParseStatement(symbolTable);
         }
 
         return new Node(Node.IF, token, new Dictionary<string, object>{
@@ -817,13 +817,13 @@ internal class Parser(CommentStripper lexer)
     }
 
     // Parse a while statement.
-    public Node _parseWhileStatement(SymbolTable symbolTable)
+    public Node ParseWhileStatement(SymbolTable symbolTable)
     {
         var whileToken = this.ExpectReservedWord("while");
 
         // Parse the expression that keeps the loop going.
-        var expression = this._parseExpression(symbolTable);
-        if (!expression.expressionType.isBooleanType())
+        var expression = this.ParseExpression(symbolTable);
+        if (!expression.expressionType.IsBooleanType())
         {
             throw new PascalError(whileToken, "while condition must be a boolean");
         }
@@ -832,7 +832,7 @@ internal class Parser(CommentStripper lexer)
         this.ExpectReservedWord("do", "expected \"do\" for \"while\" loop");
 
         // Parse the statement. This can be a begin/end pair.
-        var statement = this._parseStatement(symbolTable);
+        var statement = this.ParseStatement(symbolTable);
 
         // Create the node.
         return new Node(Node.WHILE, whileToken, new Dictionary<string, object>{
@@ -842,12 +842,12 @@ internal class Parser(CommentStripper lexer)
     }
 
     // Parse a repeat/until statement.
-    public Node _parseRepeatStatement(SymbolTable symbolTable)
+    public Node ParseRepeatStatement(SymbolTable symbolTable)
     {
-        var block = this._parseBlock(symbolTable, "repeat", "until");
-        var expression = this._parseExpression(symbolTable);
-        
-        if (!expression.expressionType.isBooleanType())
+        var block = this.ParseBlock(symbolTable, "repeat", "until");
+        var expression = this.ParseExpression(symbolTable);
+
+        if (!expression.expressionType.IsBooleanType())
         {
             //TODO: MVM throw new PascalError(node.token, "repeat condition must be a boolean");
             throw new PascalError(null, "repeat condition must be a boolean");
@@ -860,14 +860,14 @@ internal class Parser(CommentStripper lexer)
     }
 
     // Parse a for statement.
-    public Node _parseForStatement(SymbolTable symbolTable)
+    public Node ParseForStatement(SymbolTable symbolTable)
     {
         var token = this.ExpectReservedWord("for");
 
         var loopVariableToken = this.ExpectIdentifier("expected identifier for \"for\" loop");
         this.ExpectSymbol(":=");
-        var fromExpr = this._parseExpression(symbolTable);
-        var downto = this.lexer.Peek().isReservedWord("downto");
+        var fromExpr = this.ParseExpression(symbolTable);
+        var downto = this.lexer.Peek().IsReservedWord("downto");
         if (downto)
         {
             this.ExpectReservedWord("downto");
@@ -877,9 +877,9 @@ internal class Parser(CommentStripper lexer)
             // Default error message if it's neither.
             this.ExpectReservedWord("to");
         }
-        var toExpr = this._parseExpression(symbolTable);
+        var toExpr = this.ParseExpression(symbolTable);
         this.ExpectReservedWord("do");
-        var body = this._parseStatement(symbolTable);
+        var body = this.ParseStatement(symbolTable);
 
         // Get the symbol for the loop variable.
         var symbolLookup = symbolTable.GetSymbol(loopVariableToken);
@@ -888,8 +888,8 @@ internal class Parser(CommentStripper lexer)
         variable.symbolLookup = symbolLookup;
 
         // Cast "from" and "to" to type of variable.
-        fromExpr = fromExpr.castToType(loopVariableType);
-        toExpr = toExpr.castToType(loopVariableType);
+        fromExpr = fromExpr.CastToType(loopVariableType);
+        toExpr = toExpr.CastToType(loopVariableType);
 
         return new Node(Node.FOR, token, new Dictionary<string, object>{
         { "variable", variable },
@@ -901,7 +901,7 @@ internal class Parser(CommentStripper lexer)
     }
 
     // Parse an exit statement.
-    public Node _parseExitStatement(SymbolTable symbolTable)
+    public Node ParseExitStatement(SymbolTable symbolTable)
     {
         var token = this.ExpectReservedWord("exit");
 
@@ -912,12 +912,12 @@ internal class Parser(CommentStripper lexer)
     // The "incompleteTypes" array is optional. If specified, and if a pointer
     // to an unknown type is found, it is added to the array. If such a pointer
     // is found and the array was not passed in, we throw.
-    public Node _parseType(SymbolTable symbolTable, List<Node> incompleteTypes= null)
+    public Node ParseType(SymbolTable symbolTable, List<Node> incompleteTypes = null)
     {
         var token = this.lexer.Next();
         Node node;
 
-        if (token.isReservedWord("array"))
+        if (token.IsReservedWord("array"))
         {
             // Array type.
             this.ExpectSymbol("[");
@@ -925,23 +925,23 @@ internal class Parser(CommentStripper lexer)
             // Parse multiple ranges.
             do
             {
-                var range = this._parseRange(symbolTable);
+                var range = this.ParseRange(symbolTable);
                 ranges.Add(range);
             } while (this.MoreToCome(",", "]"));
             this.ExpectSymbol("]");
             this.ExpectReservedWord("of");
-            var elementType = this._parseType(symbolTable, incompleteTypes);
+            var elementType = this.ParseType(symbolTable, incompleteTypes);
 
             node = new Node(Node.ARRAY_TYPE, token, new Dictionary<string, object> {
                 { "elementType", elementType },
                 { "ranges", ranges}
         });
         }
-        else if (token.isReservedWord("record"))
+        else if (token.IsReservedWord("record"))
         {
-            node = this._parseRecordType(symbolTable, token, incompleteTypes);
+            node = this.ParseRecordType(symbolTable, token, incompleteTypes);
         }
-        else if (token.isSymbol("^"))
+        else if (token.IsSymbol("^"))
         {
             var typeNameToken = this.ExpectIdentifier("expected type identifier");
             Node type;
@@ -1003,7 +1003,7 @@ internal class Parser(CommentStripper lexer)
     }
 
     // Parse a record type definition. See _parseType() for an explanation of "incompleteTypes".
-    public Node _parseRecordType(SymbolTable symbolTable, Token token, List<Node> incompleteTypes)
+    public Node ParseRecordType(SymbolTable symbolTable, Token token, List<Node> incompleteTypes)
     {
         // A record is a list of fields.
         var fields = new List<Node>();
@@ -1011,12 +1011,12 @@ internal class Parser(CommentStripper lexer)
         while (true)
         {
             var token2 = this.lexer.Peek();
-            if (token.isSymbol(";"))
+            if (token.IsSymbol(";"))
             {
                 // Empty field, no problem.
                 this.lexer.Next();
             }
-            else if (token2.isReservedWord("end"))
+            else if (token2.IsReservedWord("end"))
             {
                 // End of record.
                 this.ExpectReservedWord("end");
@@ -1026,10 +1026,10 @@ internal class Parser(CommentStripper lexer)
             {
                 //fields.push.apply(fields,
                 fields.AddRange(
-                                  this._parseRecordSection(symbolTable, token2, incompleteTypes));
+                                  this.ParseRecordSection(symbolTable, token2, incompleteTypes));
                 // Must have ";" or "end" after field.
                 var token1 = this.lexer.Peek();
-                if (!token.isSymbol(";") && !token1.isReservedWord("end"))
+                if (!token.IsSymbol(";") && !token1.IsReservedWord("end"))
                 {
                     throw new PascalError(token1, "expected \";\" or \"end\" after field");
                 }
@@ -1042,7 +1042,7 @@ internal class Parser(CommentStripper lexer)
         {
             var field = fields[i];
             field.offset = offset;
-            offset += (int)field.type.getTypeSize();
+            offset += (int)field.type.GetTypeSize();
         }
 
         return new Node(Node.RECORD_TYPE, token, new Dictionary<string, object>{
@@ -1053,7 +1053,7 @@ internal class Parser(CommentStripper lexer)
     // Parse a section of a record type, which is a list of identifiers and
     // their type. Returns an array of FIELD nodes. See _parseType() for an
     // explanation of "incompleteTypes".
-    public List<Node> _parseRecordSection(SymbolTable symbolTable, Token fieldToken, List<Node> incompleteTypes)
+    public List<Node> ParseRecordSection(SymbolTable symbolTable, Token fieldToken, List<Node> incompleteTypes)
     {
         var fields = new List<Node>();
 
@@ -1071,7 +1071,7 @@ internal class Parser(CommentStripper lexer)
         this.ExpectSymbol(":");
 
         // Parse the fields's type.
-        var type = this._parseType(symbolTable, incompleteTypes);
+        var type = this.ParseType(symbolTable, incompleteTypes);
 
         // Set the type of all fields.
         for (var i = 0; i < fields.Count; i++)
@@ -1083,59 +1083,59 @@ internal class Parser(CommentStripper lexer)
     }
 
     // Parses a range, such as "5..10". Either can be a constant expression.
-    public Node _parseRange(SymbolTable symbolTable)
+    public Node ParseRange(SymbolTable symbolTable)
     {
-        var low = this._parseExpression(symbolTable);
+        var low = this.ParseExpression(symbolTable);
         var token = this.ExpectSymbol("..");
-        var high = this._parseExpression(symbolTable);
+        var high = this.ParseExpression(symbolTable);
 
         return new Node(Node.RANGE, token, new Dictionary<string, object> { { "low", low }, { "high", high } });
     }
 
     // Parses an expression.
-    public Node _parseExpression(SymbolTable symbolTable)
+    public Node ParseExpression(SymbolTable symbolTable)
     {
-        return this._parseRelationalExpression(symbolTable);
+        return this.ParseRelationalExpression(symbolTable);
     }
 
     // Parses a relational expression.
-    public Node _parseRelationalExpression(SymbolTable symbolTable)
+    public Node ParseRelationalExpression(SymbolTable symbolTable)
     {
-        var node = this._parseAdditiveExpression(symbolTable);
+        var node = this.ParseAdditiveExpression(symbolTable);
 
         while (true)
         {
             var token = this.lexer.Peek();
-            if (token.isSymbol("="))
+            if (token.IsSymbol("="))
             {
-                node = this._createBinaryNode(symbolTable, token, node, Node.EQUALITY,
-                        this._parseAdditiveExpression).withExpressionType(Node.booleanType);
+                node = this.CreateBinaryNode(symbolTable, token, node, Node.EQUALITY,
+                        this.ParseAdditiveExpression).WithExpressionType(Node.booleanType);
             }
-            else if (token.isSymbol("<>"))
+            else if (token.IsSymbol("<>"))
             {
-                node = this._createBinaryNode(symbolTable, token, node, Node.INEQUALITY,
-                        this._parseAdditiveExpression).withExpressionType(Node.booleanType);
+                node = this.CreateBinaryNode(symbolTable, token, node, Node.INEQUALITY,
+                        this.ParseAdditiveExpression).WithExpressionType(Node.booleanType);
             }
-            else if (token.isSymbol(">"))
+            else if (token.IsSymbol(">"))
             {
-                node = this._createBinaryNode(symbolTable, token, node, Node.GREATER_THAN,
-                        this._parseAdditiveExpression).withExpressionType(Node.booleanType);
+                node = this.CreateBinaryNode(symbolTable, token, node, Node.GREATER_THAN,
+                        this.ParseAdditiveExpression).WithExpressionType(Node.booleanType);
             }
-            else if (token.isSymbol("<"))
+            else if (token.IsSymbol("<"))
             {
-                node = this._createBinaryNode(symbolTable, token, node, Node.LESS_THAN,
-                        this._parseAdditiveExpression).withExpressionType(Node.booleanType);
+                node = this.CreateBinaryNode(symbolTable, token, node, Node.LESS_THAN,
+                        this.ParseAdditiveExpression).WithExpressionType(Node.booleanType);
             }
-            else if (token.isSymbol(">="))
+            else if (token.IsSymbol(">="))
             {
-                node = this._createBinaryNode(symbolTable, token, node,
+                node = this.CreateBinaryNode(symbolTable, token, node,
                                               Node.GREATER_THAN_OR_EQUAL_TO,
-                        this._parseAdditiveExpression).withExpressionType(Node.booleanType);
+                        this.ParseAdditiveExpression).WithExpressionType(Node.booleanType);
             }
-            else if (token.isSymbol("<="))
+            else if (token.IsSymbol("<="))
             {
-                node = this._createBinaryNode(symbolTable, token, node, Node.LESS_THAN_OR_EQUAL_TO,
-                        this._parseAdditiveExpression).withExpressionType(Node.booleanType);
+                node = this.CreateBinaryNode(symbolTable, token, node, Node.LESS_THAN_OR_EQUAL_TO,
+                        this.ParseAdditiveExpression).WithExpressionType(Node.booleanType);
             }
             else
             {
@@ -1147,27 +1147,27 @@ internal class Parser(CommentStripper lexer)
     }
 
     // Parses an additive expression.
-    public Node _parseAdditiveExpression(SymbolTable symbolTable)
+    public Node ParseAdditiveExpression(SymbolTable symbolTable)
     {
-        var node = this._parseMultiplicativeExpression(symbolTable);
+        var node = this.ParseMultiplicativeExpression(symbolTable);
 
         while (true)
         {
             var token = this.lexer.Peek();
-            if (token.isSymbol("+"))
+            if (token.IsSymbol("+"))
             {
-                node = this._createBinaryNode(symbolTable, token, node, Node.ADDITION,
-                                              this._parseMultiplicativeExpression);
+                node = this.CreateBinaryNode(symbolTable, token, node, Node.ADDITION,
+                                              this.ParseMultiplicativeExpression);
             }
-            else if (token.isSymbol("-"))
+            else if (token.IsSymbol("-"))
             {
-                node = this._createBinaryNode(symbolTable, token, node, Node.SUBTRACTION,
-                                              this._parseMultiplicativeExpression);
+                node = this.CreateBinaryNode(symbolTable, token, node, Node.SUBTRACTION,
+                                              this.ParseMultiplicativeExpression);
             }
-            else if (token.isReservedWord("or"))
+            else if (token.IsReservedWord("or"))
             {
-                node = this._createBinaryNode(symbolTable, token, node, Node.OR,
-                                              this._parseMultiplicativeExpression,
+                node = this.CreateBinaryNode(symbolTable, token, node, Node.OR,
+                                              this.ParseMultiplicativeExpression,
                                               Node.booleanType);
             }
             else
@@ -1180,37 +1180,37 @@ internal class Parser(CommentStripper lexer)
     }
 
     // Parses a multiplicative expression.
-    public Node _parseMultiplicativeExpression(SymbolTable symbolTable)
+    public Node ParseMultiplicativeExpression(SymbolTable symbolTable)
     {
-        var node = this._parseUnaryExpression(symbolTable);
+        var node = this.ParseUnaryExpression(symbolTable);
 
         while (true)
         {
             var token = this.lexer.Peek();
-            if (token.isSymbol("*"))
+            if (token.IsSymbol("*"))
             {
-                node = this._createBinaryNode(symbolTable, token, node, Node.MULTIPLICATION,
-                                              this._parseUnaryExpression, null);
+                node = this.CreateBinaryNode(symbolTable, token, node, Node.MULTIPLICATION,
+                                              this.ParseUnaryExpression, null);
             }
-            else if (token.isSymbol("/"))
+            else if (token.IsSymbol("/"))
             {
-                node = this._createBinaryNode(symbolTable, token, node, Node.DIVISION,
-                                              this._parseUnaryExpression, Node.realType);
+                node = this.CreateBinaryNode(symbolTable, token, node, Node.DIVISION,
+                                              this.ParseUnaryExpression, Node.realType);
             }
-            else if (token.isReservedWord("div"))
+            else if (token.IsReservedWord("div"))
             {
-                node = this._createBinaryNode(symbolTable, token, node, Node.INTEGER_DIVISION,
-                                              this._parseUnaryExpression, Node.integerType);
+                node = this.CreateBinaryNode(symbolTable, token, node, Node.INTEGER_DIVISION,
+                                              this.ParseUnaryExpression, Node.integerType);
             }
-            else if (token.isReservedWord("mod"))
+            else if (token.IsReservedWord("mod"))
             {
-                node = this._createBinaryNode(symbolTable, token, node, Node.MOD,
-                                              this._parseUnaryExpression, Node.integerType);
+                node = this.CreateBinaryNode(symbolTable, token, node, Node.MOD,
+                                              this.ParseUnaryExpression, Node.integerType);
             }
-            else if (token.isReservedWord("and"))
+            else if (token.IsReservedWord("and"))
             {
-                node = this._createBinaryNode(symbolTable, token, node, Node.AND,
-                                              this._parseUnaryExpression, Node.booleanType);
+                node = this.CreateBinaryNode(symbolTable, token, node, Node.AND,
+                                              this.ParseUnaryExpression, Node.booleanType);
             }
             else
             {
@@ -1222,47 +1222,47 @@ internal class Parser(CommentStripper lexer)
     }
 
     // Parses a unary expression, such as a negative sign or a "not".
-    public Node _parseUnaryExpression(SymbolTable symbolTable)
+    public Node ParseUnaryExpression(SymbolTable symbolTable)
     {
         Node node;
 
         // Parse unary operator.
         var token = this.lexer.Peek();
-        if (token.isSymbol("-"))
+        if (token.IsSymbol("-"))
         {
             // Negation.
             this.ExpectSymbol("-");
 
-            var expression = this._parseUnaryExpression(symbolTable);
+            var expression = this.ParseUnaryExpression(symbolTable);
             node = new Node(Node.NEGATIVE, token, new Dictionary<string, object>{
                 { "expression", expression }
-        }).withExpressionTypeFrom(expression);
+        }).WithExpressionTypeFrom(expression);
         }
-        else if (token.isSymbol("+"))
+        else if (token.IsSymbol("+"))
         {
             // Unary plus.
             this.ExpectSymbol("+");
 
             // Nothing to wrap sub-expression with.
-            node = this._parseUnaryExpression(symbolTable);
+            node = this.ParseUnaryExpression(symbolTable);
         }
-        else if (token.isReservedWord("not"))
+        else if (token.IsReservedWord("not"))
         {
             // Logical not.
             this.ExpectReservedWord("not");
 
-            var expression = this._parseUnaryExpression(symbolTable);
-            if (!expression.expressionType.isBooleanType())
+            var expression = this.ParseUnaryExpression(symbolTable);
+            if (!expression.expressionType.IsBooleanType())
             {
                 throw new PascalError(expression.token, "not operand must be a boolean");
             }
             node = new Node(Node.NOT, token, new Dictionary<string, object>{
                 { "expression",expression }
-        }).withExpressionTypeFrom(expression);
+        }).WithExpressionTypeFrom(expression);
         }
         else
         {
-            node = this._parsePrimaryExpression(symbolTable);
+            node = this.ParsePrimaryExpression(symbolTable);
         }
 
         return node;
@@ -1270,7 +1270,7 @@ internal class Parser(CommentStripper lexer)
 
     // Parses an atomic expression, such as a number, identifier, or
     // parenthesized expression.
-    public Node _parsePrimaryExpression(SymbolTable symbolTable)
+    public Node ParsePrimaryExpression(SymbolTable symbolTable)
     {
         var token = this.lexer.Peek();
         Node node;
@@ -1280,18 +1280,18 @@ internal class Parser(CommentStripper lexer)
             // Numeric literal.
             token = this.lexer.Next();
             node = new Node(Node.NUMBER, token);
-            var v = node.getNumber();
+            var v = node.GetNumber();
             int typeCode;
 
             // See if we're an integer or real.
-            if (Math.Abs(v)- (int)(Math.Abs(v)) > 0)
+            if (Math.Abs(v) - (int)(Math.Abs(v)) > 0)
             {
                 typeCode = Inst.defs.R;
             }
             else
             {
                 typeCode = Inst.defs.I;
-            } 
+            }
             // Set the type based on the kind of number we have. Really we should
             // have the lexer tell us, because JavaScript treats "2.0" the same as "2".
             node.expressionType = new Node(Node.SIMPLE_TYPE, token, new Dictionary<string, object>{
@@ -1313,7 +1313,7 @@ internal class Parser(CommentStripper lexer)
         else if (token.tokenType == Token.IDENTIFIER)
         {
             // Parse a variable (identifier, array dereference, etc.).
-            node = this._parseVariable(symbolTable);
+            node = this.ParseVariable(symbolTable);
 
             // What we do next depends on the variable. If it's just an identifier,
             // then it could be a function call, a function call with arguments,
@@ -1326,7 +1326,7 @@ internal class Parser(CommentStripper lexer)
 
                 // Look up the symbol.
                 SymbolLookup symbolLookup;
-                if (nextToken.isSymbol("("))
+                if (nextToken.IsSymbol("("))
                 {
                     // This is a hack to allow recursion. I don't know how a real Pascal
                     // parser might distinguish between a function and an identifier. Do
@@ -1343,7 +1343,7 @@ internal class Parser(CommentStripper lexer)
                 if (symbol.type.nodeType == Node.SUBPROGRAM_TYPE)
                 {
                     // We're calling a function. Make sure it's not a procedure.
-                    if (symbol.type.returnType.isVoidType())
+                    if (symbol.type.returnType.IsVoidType())
                     {
                         throw new PascalError(node.token, "can't call procedure in expression");
                     }
@@ -1351,7 +1351,7 @@ internal class Parser(CommentStripper lexer)
                     // Make the function call node with the optional arguments.
                     node = new Node(Node.FUNCTION_CALL, node.token, new Dictionary<string, object>{
                         { "name", node },
-                        { "argumentList", this._parseArguments(symbolTable, symbol.type) }
+                        { "argumentList", this.ParseArguments(symbolTable, symbol.type) }
                 });
 
                     // Type of the function call is the return type of the function.
@@ -1399,14 +1399,14 @@ internal class Parser(CommentStripper lexer)
                 }
             }
         }
-        else if (token.isSymbol("("))
+        else if (token.IsSymbol("("))
         {
             // Parenthesized expression.
             this.ExpectSymbol("(");
-            node = this._parseExpression(symbolTable);
+            node = this.ParseExpression(symbolTable);
             this.ExpectSymbol(")");
         }
-        else if (token.isSymbol("@"))
+        else if (token.IsSymbol("@"))
         {
             // This doesn't work. It's not clear what the type of the resulting
             // expression is. It should be a pointer to a (say) integer, but
@@ -1439,7 +1439,7 @@ internal class Parser(CommentStripper lexer)
     }
 
     // Parse an array dereference, such as "a[2,3+4]".
-    public Node _parseArrayDereference(SymbolTable symbolTable, Node variable)
+    public Node ParseArrayDereference(SymbolTable symbolTable, Node variable)
     {
         // Make sure the variable is an array.
         if (variable.expressionType.nodeType != Node.ARRAY_TYPE)
@@ -1452,7 +1452,7 @@ internal class Parser(CommentStripper lexer)
         do
         {
             // Indices must be integers.
-            indices.Add(this._parseExpression(symbolTable).castToType(Node.integerType));
+            indices.Add(this.ParseExpression(symbolTable).CastToType(Node.integerType));
         } while (this.MoreToCome(",", "]"));
         this.ExpectSymbol("]");
 
@@ -1468,7 +1468,7 @@ internal class Parser(CommentStripper lexer)
     }
 
     // Parse a record designator, such as "a.b".
-    public Node _parseRecordDesignator(SymbolTable symbolTable, Node variable)
+    public Node ParseRecordDesignator(SymbolTable symbolTable, Node variable)
     {
         // Make sure the variable so far is a record.
         var recordType = variable.expressionType;
@@ -1484,7 +1484,7 @@ internal class Parser(CommentStripper lexer)
         var fieldToken = this.ExpectIdentifier("expected a field name");
 
         // Get the field for this identifier.
-        var field = recordType.getField(fieldToken);
+        var field = recordType.GetField(fieldToken);
 
         // Create the new node.
         var node = new Node(Node.FIELD_DESIGNATOR, dotToken, new Dictionary<string, object> {
@@ -1507,7 +1507,7 @@ internal class Parser(CommentStripper lexer)
     //      and return an expression node.
     // forceType: optional type node (e.g., Node.realType). Both operands will be cast
     //      naturally to this type and the node will be of this type.
-    public Node _createBinaryNode(SymbolTable symbolTable, Token token, Node node,
+    public Node CreateBinaryNode(SymbolTable symbolTable, Token token, Node node,
                                                  int nodeType, Func<SymbolTable, Node> rhsFn, Node forceType = null)
     {
 
@@ -1533,16 +1533,16 @@ internal class Parser(CommentStripper lexer)
         else
         {
             // Figure it out from the operands.
-            expressionType = this._getCompatibleType(token,
+            expressionType = this.GetCompatibleType(token,
                                                      operand1.expressionType,
                                                      operand2.expressionType);
         }
 
         // Cast the operands if necessary.
         node = new Node(nodeType, token, new Dictionary<string, object>{
-            { "lhs", operand1.castToType(expressionType) },
-            { "rhs", operand2.castToType(expressionType) }
-    }).withExpressionType(expressionType);
+            { "lhs", operand1.CastToType(expressionType) },
+            { "rhs", operand2.CastToType(expressionType) }
+    }).WithExpressionType(expressionType);
 
         return node;
     }
@@ -1551,7 +1551,7 @@ internal class Parser(CommentStripper lexer)
     // integer and another is real, returns a real, since you can implicitly
     // cast from integer to real. Throws if a compatible type can't
     // be found. Token is passed in just for error reporting.
-    public Node _getCompatibleType(Token token, Node type1, Node type2)
+    public Node GetCompatibleType(Token token, Node type1, Node type2)
     {
         // Must have them defined.
         if (type1 == null)
@@ -1568,7 +1568,7 @@ internal class Parser(CommentStripper lexer)
         if (type1.nodeType != type2.nodeType)
         {
             throw new PascalError(token, "basic types are incompatible: " +
-                                 type1.print() + " and " + type2.print());
+                                 type1.Print() + " and " + type2.Print());
         }
 
         // Can cast between some simple types.
@@ -1590,8 +1590,8 @@ internal class Parser(CommentStripper lexer)
 
                 // These can't be cast.
                 throw new PascalError(token, "no common type between " +
-                                     Inst.defs.typeCodeToName(typeCode1) +
-                                     " and " + Inst.defs.typeCodeToName(typeCode2));
+                                     Inst.defs.TypeCodeToName(typeCode1) +
+                                     " and " + Inst.defs.TypeCodeToName(typeCode2));
             }
 
             // Can always cast to a real.
@@ -1624,7 +1624,4 @@ internal class Parser(CommentStripper lexer)
             return type1;
         }
     }
-
-
-
 }

@@ -1,7 +1,7 @@
 ﻿namespace TPC;
-internal class modules
+internal class Modules
 {
-    internal static void importModule(string name, SymbolTable symbolTable)
+    internal static void ImportModule(string name, SymbolTable symbolTable)
     {
         switch (name.ToLower())
         {
@@ -9,13 +9,13 @@ internal class modules
                 Builtin.ImportSymbols(symbolTable);
                 break;
             case "crt":
-                crt.importSymbols(symbolTable);
+                CRT.ImportSymbols(symbolTable);
                 break;
             case "dos":
                 // I don't know what goes in here.
                 break;
             case "graph":
-                graph.importSymbols(symbolTable);
+                Graph.ImportSymbols(symbolTable);
                 break;
             case "mouse":
                 mouse.importSymbols(symbolTable);

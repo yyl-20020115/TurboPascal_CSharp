@@ -252,7 +252,7 @@ internal class Machine
         catch (Exception e)
         {
             if (e is PascalError) {
-                Console.WriteLine(((PascalError)e).getMessage());
+                Console.WriteLine(((PascalError)e).GetMessage());
             }
             Console.WriteLine(e.StackTrace);
             Console.WriteLine(this._getState());
@@ -327,7 +327,7 @@ internal class Machine
 
         var state = new List<string>() {
             "pc = " + Utils.RightAlign(this.pc.ToString(), 4),
-            Utils.LeftAlign(Inst.defs.disassemble((int)this.bytecode.istore[this.pc]), 11),
+            Utils.LeftAlign(Inst.defs.Disassemble((int)this.bytecode.istore[this.pc]), 11),
             /// "sp = " + utils.rightAlign(this.sp, 3),
             "mp = " + Utils.RightAlign(this.mp.ToString(), 3),
             "stack = " + Utils.LeftAlign(stack, 40),
@@ -419,9 +419,9 @@ internal class Machine
         // Advance the PC right away. Various instructions can then modify it.
         this.pc++;
 
-        var opcode = Inst.defs.getOpcode(ix);
-        var operand1 = Inst.defs.getOperand1(ix);
-        var operand2 = Inst.defs.getOperand2(ix);
+        var opcode = Inst.defs.GetOpcode(ix);
+        var operand1 = Inst.defs.GetOperand1(ix);
+        var operand2 = Inst.defs.GetOperand2(ix);
 
         switch (opcode)
         {
@@ -440,7 +440,7 @@ internal class Machine
             case Inst.defs.CSP:
                 // Call System Procedure. We look up the index into the Native object
                 // and call it.
-                var nativeProcedure = this.bytecode.native.get(operand2);
+                var nativeProcedure = this.bytecode.native.Get(operand2);
 
                 // Pop parameters.
                 List<object> parameters = new List<object>();
@@ -464,7 +464,7 @@ internal class Machine
                 if (this.state == Machine.STATE_RUNNING)
                 {
                     // Push result if we're a function.
-                    if (!nativeProcedure.returnType.isSimpleType(Inst.defs.P))
+                    if (!nativeProcedure.returnType.IsSimpleType(Inst.defs.P))
                     {
                         this._push(returnValue);
                     }
@@ -710,7 +710,7 @@ internal class Machine
                 else
                 {
                     throw new PascalError(null, "can't push constant of type " +
-                                         Inst.defs.typeCodeToName(operand1));
+                                         Inst.defs.TypeCodeToName(operand1));
                 }
                 break;
             case Inst.defs.LDI:
